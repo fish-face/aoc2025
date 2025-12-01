@@ -1,0 +1,17 @@
+version: 1
+author: Fish-Face
+language: Zig
+dockerfile: .docker/Dockerfile
+persistence:
+  - /root/.cache/
+  - /root/.local/
+  - .zig-cache
+code: /code
+workdir: /code
+runonce: zig build -O ReleaseFast install_day%zeroday%
+cmd: zig-out/day%zeroday% inputs/%zeroday%.txt
+daypath: src/%zeroday%.zig
+inputfile: inputs/%zeroday%.txt
+answerfile: answers/%zeroday%.txt
+common:
+  - common
