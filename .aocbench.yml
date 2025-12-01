@@ -5,7 +5,7 @@ dockerfile: .docker/Dockerfile
 persistence:
   - /root/.cache/
   - /root/.local/
-  - .zig-cache
+  - /code/.zig-cache
 code: /code
 workdir: /code
 runonce: zig build --release=fast install_day%zeroday%
