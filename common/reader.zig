@@ -32,7 +32,7 @@ pub const Reader = struct {
 
     /// Split on newline and pass through a parse function
     pub fn parseLines(self: Reader, comptime T: type, f: fn (Allocator, []const u8) anyerror!T) !List(T) {
-        const input = try self.read();
+        const input = try self.mmap();
         var it = std.mem.splitScalar(u8, input, '\n');
         var result = List(T).init(self.allocator);
         while (it.next()) |line| {
@@ -44,9 +44,27 @@ pub const Reader = struct {
         return result;
     }
 
+    // pub fn foldLines(self: Reader, comptime T: type, f: fn (Allocator, []const u8, T) T) T {
+    //
+    // }
+
     /// Read entire file to a string
     fn read(self: Reader) ![]const u8 {
         return std.fs.cwd().readFileAlloc(self.path, self.allocator, .unlimited);
+    }
+
+    fn mmap(self: Reader) ![] u8 {
+        const file = try std.fs.cwd().openFile(self.path, .{});
+        const handle = file.handle;
+        const stats = try std.posix.fstat(handle);
+        return std.posix.mmap(
+            null,
+            @intCast(stats.size),
+            std.posix.PROT.READ,
+            .{.TYPE = .SHARED},
+            handle,
+            0,
+        );
     }
 
     // TODO maybe a function to split as the input is read, rather than afterwards

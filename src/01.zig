@@ -45,7 +45,6 @@ const Instruction = struct {
 
 pub fn main() !void {
     const allocator = try aoc.allocator();
-    _ = try allocator.alloc(u8, 10);
     const reader = try aoc.Reader.init(allocator);
     const input = try reader.parseLines(Instruction, Instruction.from_str);
     var n: i16 = 50;
