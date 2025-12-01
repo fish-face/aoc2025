@@ -18,7 +18,7 @@ pub const Reader = struct {
 
     /// Split on newline and return strings
     pub fn readLines(self: Reader) !List([] const u8) {
-        const input = try self.read();
+        const input = try self.mmap();
         var it = std.mem.splitScalar(u8, input, '\n');
         var result = List([] const u8).init(self.allocator);
         while (it.next()) |line| {
@@ -44,15 +44,30 @@ pub const Reader = struct {
         return result;
     }
 
-    // pub fn foldLines(self: Reader, comptime T: type, f: fn (Allocator, []const u8, T) T) T {
-    //
-    // }
+    /// Split on newline and fold over the splits
+    pub fn foldLines(self: Reader, comptime T: type, start: T, f: fn (Allocator, []const u8, T) T) !T {
+        const input = try self.mmap();
+        var i: usize = 0;
+        var context = start;
+        while (i < input.len) {
+            for (input[i..], i..) |byte, j| {
+                if (byte == '\n') {
+                    if (j > i) {
+                        context = f(self.allocator, input[i..j], context);
+                    }
+                    i = j + 1;
+                }
+            }
+        }
+        return context;
+    }
 
     /// Read entire file to a string
     fn read(self: Reader) ![]const u8 {
         return std.fs.cwd().readFileAlloc(self.path, self.allocator, .unlimited);
     }
 
+    /// Read entire file with mmap
     fn mmap(self: Reader) ![] u8 {
         const file = try std.fs.cwd().openFile(self.path, .{});
         const handle = file.handle;

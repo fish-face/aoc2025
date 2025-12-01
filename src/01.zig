@@ -5,7 +5,7 @@ const Allocator = std.mem.Allocator;
 const Instruction = struct {
     n: i16,
 
-    fn from_str(_: Allocator, s: []const u8) !Instruction {
+    fn from_str(s: []const u8) !Instruction {
         const dir: i8 = switch (s[0]) {
             'L' => -1,
             'R' => 1,
@@ -43,23 +43,31 @@ const Instruction = struct {
     }
 };
 
+const Ctxt = struct {
+    n: i16,
+    part1: u16,
+    part2: u16,
+};
+
+fn step(_: Allocator, line: []const u8, ctxt: Ctxt) Ctxt {
+    const instruction = Instruction.from_str(line) catch unreachable;
+    var res = ctxt;
+    res.n, const overflow = instruction.apply(res.n);
+    if (res.n == 0) {
+        res.part1 += 1;
+    }
+    res.part2 += overflow;
+    return res;
+}
+
 pub fn main() !void {
     const allocator = try aoc.allocator();
     const reader = try aoc.Reader.init(allocator);
-    const input = try reader.parseLines(Instruction, Instruction.from_str);
-    var n: i16 = 50;
-    var part1: u16 = 0;
-    var part2: u16 = 0;
-    for (input.items) |line| {
-        n, const overflow = line.apply(n);
-        if (n == 0) {
-            part1 += 1;
-        }
-        part2 += overflow;
-    }
+    const ctxt: Ctxt = .{.n = 50, .part1 = 0, .part2 = 0};
+    const res = try reader.foldLines(Ctxt, ctxt, step);
 
-    try aoc.print("{d}\n", .{part1});
-    try aoc.print("{d}\n", .{part2});
+    try aoc.print("{d}\n", .{res.part1});
+    try aoc.print("{d}\n", .{res.part2});
 }
 
 test "test instruction application" {
