@@ -5,9 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1f9a0e4f-6463-4490-a7c2-893a81c5f7b5" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.aocbench.yml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.docker/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/common/reader.zig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.aocbench.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.aocbench.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/common/root.zig" beforeDir="false" afterPath="$PROJECT_DIR$/common/root.zig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/01.zig" beforeDir="false" afterPath="$PROJECT_DIR$/src/01.zig" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,7 +62,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1764413024955</updated>
-      <workItem from="1764413025977" duration="12670000" />
+      <workItem from="1764413025977" duration="27677000" />
     </task>
     <servers />
   </component>
