@@ -62,6 +62,7 @@ fn step(_: Allocator, line: []const u8, ctxt: Ctxt) Ctxt {
 
 pub fn main() !void {
     const allocator = try aoc.allocator();
+
     const reader = try aoc.Reader.init(allocator);
     const ctxt: Ctxt = .{.n = 50, .part1 = 0, .part2 = 0};
     const res = try reader.foldLines(Ctxt, ctxt, step);

@@ -3,22 +3,19 @@ pub const Reader = @import("reader.zig").Reader;
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const MEM_SIZE = 1024 * 1024 * 1024; // 1 GB
+const MEM_SIZE = 1024 * 1024 * 100; // 100 MB
 
 pub fn allocator() !Allocator {
     return std.heap.page_allocator;
     // TODO reinstate
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    // return gpa.allocator();
     // GRIPE: why is unreachable code a compile error?
     // const heap = std.heap.page_allocator;
     // const memory_buffer = try heap.alloc(
     //     u8, MEM_SIZE,
     // );
     // // defer heap.free(memory_buffer);
-    // var fba = std.heap.FixedBufferAllocator.init(
-    //     memory_buffer
-    // );
+    // const fba = try heap.create(std.heap.FixedBufferAllocator);
+    // fba.* = .init(memory_buffer);
     // return fba.allocator();
 }
 
