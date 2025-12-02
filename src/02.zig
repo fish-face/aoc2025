@@ -24,6 +24,21 @@ fn digits(i: usize) usize {
         else => unreachable,
     };
 }
+
+const test_divisors: []const []const usize  = &.{
+    &.{},
+    &.{},
+    &.{11},
+    &.{111},
+    &.{1111, 101},
+    &.{11111},
+    &.{111111, 10101, 1001},
+    &.{1111111},
+    &.{11111111, 1010101, 10001},
+    &.{111111111, 1001001},
+    &.{1111111111, 101010101, 100001}
+};
+
 fn step(_: Allocator, range: []const u8, ctxt: Ctxt) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
@@ -89,28 +104,10 @@ fn testInvalid(d: usize, i: usize) struct {bool, bool} {
             return .{true, true};
         }
     }
-    // example test divisors for 6 digits:
-    // 111111 = 10**5 + 10**4 + 10**3 + 10**2 + 10**1 + 10**0
-    //  10101 =         10**4 +         10**2 +         10**0
-    //   1001 =                 10**3 +                 10**0
-    for (2..d+1) |p| {
-        if (d % p == 0) {
-            // GRIPE: type inference incapable of working with int literals
-            var testdiv: usize = 0;
-
-            // p is a divisor of the number of digits; construct a test divisor of the number
-            // let's hope this gets optimised to divmod lol
-            const q = d / p;
-            // p = number of 1s, q = distance between 1s
-            for (0..p) |j| {
-                testdiv += pow(usize, 10, j * q);
-            }
-
-            // Actual test
-            if (i % testdiv == 0) {
-                // std.log.debug("testdiv for {d}: {d} {d} {d}={d}", .{i, d, p, q, testdiv});
-                return .{false, true};
-            }
+    const tds = test_divisors[d];
+    for (tds) |div| {
+        if (i % div == 0) {
+            return .{false, true};
         }
     }
     return .{false, false};
@@ -138,3 +135,27 @@ pub fn main() !void {
     try aoc.print("{d}\n{d}\n", .{res.part1, res.part2});
 }
 
+test "test divisor creation" {
+    for (1..11) |d| {
+        const fast_divisors = test_divisors[d];
+        var i: usize = 0;
+        for (2..d+1) |p| {
+            if (d % p == 0) {
+                // GRIPE: type inference incapable of working with int literals
+                var testdiv: usize = 0;
+
+                // p is a divisor of the number of digits; construct a test divisor of the number
+                // let's hope this gets optimised to divmod lol
+                const q = d / p;
+                // p = number of 1s, q = distance between 1s
+                for (0..p) |j| {
+                    testdiv += pow(usize, 10, j * q);
+                }
+                std.log.warn("{d}: {d} {any}", .{d, p, fast_divisors});
+                try std.testing.expect(i < fast_divisors.len);
+                try std.testing.expectEqual(fast_divisors[fast_divisors.len - i - 1], testdiv);
+                i += 1;
+            }
+        }
+    }
+}
