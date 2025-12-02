@@ -45,21 +45,26 @@ pub const Reader = struct {
     }
 
     /// Split on newline and fold over the splits
-    pub fn foldLines(self: Reader, comptime T: type, start: T, f: fn (Allocator, []const u8, T) T) !T {
+    pub fn foldDelim(self: Reader, delim: u8, comptime T: type, start: T, f: fn (Allocator, []const u8, T) T) !T {
         const input = try self.mmap();
         var i: usize = 0;
         var context = start;
         while (i < input.len) {
             for (input[i..], i..) |byte, j| {
-                if (byte == '\n') {
+                if (byte == delim or j >= input.len - 1) {
                     if (j > i) {
                         context = f(self.allocator, input[i..j], context);
                     }
                     i = j + 1;
+                    break;
                 }
             }
         }
         return context;
+    }
+
+    pub fn foldLines(self: Reader, comptime T: type, start: T, f: fn (Allocator, []const u8, T) T) !T {
+        return self.foldDelim('\n', T, start, f);
     }
 
     /// Read entire file to a string
