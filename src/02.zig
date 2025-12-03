@@ -25,7 +25,7 @@ fn digits(i: usize) usize {
     };
 }
 
-const test_divisors: []const []const usize  = &.{
+const test_divisors: []const []const usize = &.{
     // 0
     &.{},
     // 1
@@ -39,7 +39,7 @@ const test_divisors: []const []const usize  = &.{
     // 5
     &.{11111},
     // 6
-    &.{10101, 1001},
+    &.{ 10101, 1001 },
     // 7
     &.{1111111},
     // 8
@@ -47,22 +47,22 @@ const test_divisors: []const []const usize  = &.{
     // 9
     &.{1001001},
     // 10
-    &.{101010101, 100001},
+    &.{ 101010101, 100001 },
     // 11
     &.{11111111111},
 };
 
-fn step(_: Allocator, range: []const u8, ctxt: Ctxt) Ctxt {
+fn step(range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
-    const l = std.fmt.parseInt(usize, range[0..len_lower], 10) catch unreachable;
-    const u = std.fmt.parseInt(usize, range[len_lower+1..], 10) catch unreachable;
+    const l = aoc.parse.atoi_stripped(usize, range[0..len_lower]);
+    const u = aoc.parse.atoi_stripped(usize, range[len_lower + 1 ..]);
 
-    var part1 = ctxt.part1;
-    var part2 = ctxt.part2;
+    var part1: usize = 0;
+    var part2: usize = 0;
 
     // GRIPE for loop can't iterate inclusive ranges
-    for (l..u+1) |i| {
+    for (l..u + 1) |i| {
         const invalid1, const invalid2 = testInvalid(digits(i), i);
         if (invalid1) part1 += i;
         if (invalid2) part2 += i;
@@ -106,24 +106,24 @@ fn step(_: Allocator, range: []const u8, ctxt: Ctxt) Ctxt {
     //     }
     // }
     //
-    return .{.part1=part1, .part2=part2};
+    return .{ .part1 = part1, .part2 = part2 };
 }
 
-fn testInvalid(d: usize, i: usize) struct {bool, bool} {
+fn testInvalid(d: usize, i: usize) struct { bool, bool } {
     if (d % 2 == 0) {
         const p1div = pow(usize, 10, d / 2) + 1;
         if (i % p1div == 0) {
             // std.log.debug("{d} --> {d}: {d}", .{i, p1div, i / p1div});
-            return .{true, true};
+            return .{ true, true };
         }
     }
     const tds = test_divisors[d];
     for (tds) |div| {
         if (i % div == 0) {
-            return .{false, true};
+            return .{ false, true };
         }
     }
-    return .{false, false};
+    return .{ false, false };
 }
 // fn processRange(digits: i64, ll: i64, lu: i64, ul: i64, uu: i64) Ctxt {
 //     // GRIPE: I can't add literal values in control-flow because they are "comptime_int" and for some reason don't get coerced to the actual type, and this is an error??
@@ -144,15 +144,23 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    const res = try reader.foldDelim(',', Ctxt, .{.part1 = 0, .part2 = 0}, step);
-    try aoc.print("{d}\n{d}\n", .{res.part1, res.part2});
+    // const res = try reader.foldDelim(',', Ctxt, .{ .part1 = 0, .part2 = 0 }, step);
+    const invalids = try aoc.parallel_map_unordered(allocator, try reader.iterDelim(','), Ctxt, []const u8, step);
+    var part1: usize = 0;
+    var part2: usize = 0;
+
+    for (invalids.items) |item| {
+        part1 += item.part1;
+        part2 += item.part2;
+    }
+    try aoc.print("{d}\n{d}\n", .{ part1, part2 });
 }
 
 test "test divisor creation" {
     for (1..11) |d| {
         const fast_divisors = test_divisors[d];
         var i: usize = 0;
-        for (2..d+1) |p| {
+        for (2..d + 1) |p| {
             if (d % p == 0) {
                 // GRIPE: type inference incapable of working with int literals
                 var testdiv: usize = 0;
@@ -164,7 +172,7 @@ test "test divisor creation" {
                 for (0..p) |j| {
                     testdiv += pow(usize, 10, j * q);
                 }
-                std.log.warn("{d}: {d} {any}", .{d, p, fast_divisors});
+                std.log.warn("{d}: {d} {any}", .{ d, p, fast_divisors });
                 try std.testing.expect(i < fast_divisors.len);
                 try std.testing.expectEqual(fast_divisors[fast_divisors.len - i - 1], testdiv);
                 i += 1;

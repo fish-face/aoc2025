@@ -1,5 +1,6 @@
 pub const Reader = @import("reader.zig").Reader;
-pub const parallel_for = @import("parallel.zig").parallel_for;
+pub const parallel_map_unordered = @import("parallel.zig").parallel_map_unordered;
+pub const parse = @import("parse.zig");
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

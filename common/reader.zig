@@ -67,10 +67,14 @@ pub const Reader = struct {
         return self.foldDelim('\n', T, start, f);
     }
 
-    pub fn iterLines(self: Reader) !std.mem.TokenIterator(u8, .scalar) {
+    pub fn iterDelim(self: Reader, delim: u8) !std.mem.TokenIterator(u8, .scalar) {
         const input = try self.mmap();
-        const res = std.mem.tokenizeScalar(u8, input, '\n');
+        const res = std.mem.tokenizeScalar(u8, input, delim);
         return res;
+    }
+
+    pub fn iterLines(self: Reader) !std.mem.TokenIterator(u8, .scalar) {
+        return self.iterDelim('\n');
     }
 
     /// Read entire file to a string
