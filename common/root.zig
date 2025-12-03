@@ -1,4 +1,5 @@
 pub const Reader = @import("reader.zig").Reader;
+pub const parallel_for = @import("parallel.zig").parallel_for;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
