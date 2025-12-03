@@ -2,18 +2,6 @@ const std = @import("std");
 const aoc = @import("aoc");
 const Allocator = std.mem.Allocator;
 
-const Ctxt = struct {
-    part1: usize,
-    part2: usize,
-};
-
-fn step(_: Allocator, line: []const u8, ctxt: Ctxt) Ctxt {
-    return .{
-        .part1 = ctxt.part1 + part1(line),
-        .part2 = ctxt.part2 + part2(line),
-    };
-}
-
 fn part1(line: []const u8) u64 {
     const l = line.len;
     const maxi = std.mem.indexOfMax(u8, line[0..l-1]);
@@ -47,7 +35,13 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    const res = try reader.foldLines(Ctxt, .{.part1 = 0, .part2 = 0}, step);
-    try aoc.print("{d}\n{d}\n", .{res.part1, res.part2});
+    var lines = try reader.iterLines();
+    var p1: u64 = 0;
+    var p2: u64 = 0;
+    while (lines.next()) |line| {
+        p1 += part1(line);
+        p2 += part2(line);
+    }
+    try aoc.print("{d}\n{d}\n", .{p1, p2});
 }
 
