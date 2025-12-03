@@ -54,11 +54,11 @@ pub fn build(b: *Build) void {
 
     {
         const test_lib = b.step("test_lib", "Run tests of library");
-        const test_cmd = b.addTest(.{
+        const test_ = b.addTest(.{
             .root_module = lib,
         });
-        const run_test = b.addRunArtifact(test_cmd);
-        linkObject(b, test_cmd);
+        const run_test = b.addRunArtifact(test_);
+        linkObject(b, test_);
         test_lib.dependOn(&run_test.step);
         test_all.dependOn(&run_test.step);
     }
