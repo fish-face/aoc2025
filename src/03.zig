@@ -4,9 +4,9 @@ const Allocator = std.mem.Allocator;
 
 fn part1(line: []const u8) u64 {
     const l = line.len;
-    const maxi = std.mem.indexOfMax(u8, line[0..l-1]);
+    const maxi = std.mem.indexOfMax(u8, line[0 .. l - 1]);
     const a = line[maxi];
-    const b = std.mem.max(u8, line[maxi+1..]);
+    const b = std.mem.max(u8, line[maxi + 1 ..]);
 
     const joltage: u64 = 10 * (a - '0') + (b - '0');
 
@@ -42,6 +42,5 @@ pub fn main() !void {
         p1 += part1(line);
         p2 += part2(line);
     }
-    try aoc.print("{d}\n{d}\n", .{p1, p2});
+    try aoc.print("{d}\n{d}\n", .{ p1, p2 });
 }
-

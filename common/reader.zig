@@ -17,10 +17,10 @@ pub const Reader = struct {
     }
 
     /// Split on newline and return strings
-    pub fn readLines(self: Reader) !List([] const u8) {
+    pub fn readLines(self: Reader) !List([]const u8) {
         const input = try self.mmap();
         var it = std.mem.splitScalar(u8, input, '\n');
-        var result = List([] const u8).init(self.allocator);
+        var result = List([]const u8).init(self.allocator);
         while (it.next()) |line| {
             // GRIPE: we haven't learnt that manually incrementing iterators is just boring? And yet we have a foreach???
             if (line.len > 0) {
@@ -83,7 +83,7 @@ pub const Reader = struct {
     }
 
     /// Read entire file with mmap
-    fn mmap(self: Reader) ![] u8 {
+    fn mmap(self: Reader) ![]u8 {
         const file = try std.fs.cwd().openFile(self.path, .{});
         const handle = file.handle;
         const stats = try std.posix.fstat(handle);
@@ -91,7 +91,7 @@ pub const Reader = struct {
             null,
             @intCast(stats.size),
             std.posix.PROT.READ,
-            .{.TYPE = .SHARED},
+            .{ .TYPE = .SHARED },
             handle,
             0,
         );

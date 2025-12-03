@@ -16,7 +16,7 @@ const Instruction = struct {
         };
     }
 
-    fn apply(self: Instruction, n: i16) struct {i16, u16} {
+    fn apply(self: Instruction, n: i16) struct { i16, u16 } {
         const val = n + self.n;
 
         // GRIPE: there being different standards in different languages is not a good reason to avoid picking a standard, and forcing everyone to use ugly function names
@@ -39,7 +39,7 @@ const Instruction = struct {
         self: Instruction,
         writer: *std.Io.Writer,
     ) !void {
-        try writer.print("{f} {d}", .{self.dir, self.n});
+        try writer.print("{f} {d}", .{ self.dir, self.n });
     }
 };
 
@@ -64,7 +64,7 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    const ctxt: Ctxt = .{.n = 50, .part1 = 0, .part2 = 0};
+    const ctxt: Ctxt = .{ .n = 50, .part1 = 0, .part2 = 0 };
     const res = try reader.foldLines(Ctxt, ctxt, step);
 
     try aoc.print("{d}\n", .{res.part1});
@@ -73,53 +73,17 @@ pub fn main() !void {
 
 test "test instruction application" {
     const allocator = try aoc.allocator();
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R1")).apply(0),
-        .{1, 0}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R1")).apply(99),
-        .{0, 1}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L1")).apply(0),
-        .{99, 0}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L1")).apply(99),
-        .{98, 0}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L100")).apply(0),
-        .{0, 1}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L100")).apply(1),
-        .{1, 1}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R100")).apply(0),
-        .{0, 1}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R100")).apply(1),
-        .{1, 1}
-    );
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R1")).apply(0), .{ 1, 0 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R1")).apply(99), .{ 0, 1 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L1")).apply(0), .{ 99, 0 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L1")).apply(99), .{ 98, 0 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L100")).apply(0), .{ 0, 1 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L100")).apply(1), .{ 1, 1 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R100")).apply(0), .{ 0, 1 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R100")).apply(1), .{ 1, 1 });
 
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L200")).apply(0),
-        .{0, 2}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "L199")).apply(99),
-        .{0, 2}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R200")).apply(1),
-        .{1, 2}
-    );
-    try std.testing.expectEqual(
-        (try Instruction.from_str(allocator, "R199")).apply(1),
-        .{0, 2}
-    );
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L200")).apply(0), .{ 0, 2 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "L199")).apply(99), .{ 0, 2 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R200")).apply(1), .{ 1, 2 });
+    try std.testing.expectEqual((try Instruction.from_str(allocator, "R199")).apply(1), .{ 0, 2 });
 }
