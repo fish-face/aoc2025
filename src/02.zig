@@ -2,6 +2,7 @@ const std = @import("std");
 const aoc = @import("aoc");
 const Allocator = std.mem.Allocator;
 const pow = std.math.pow;
+const Set = std.AutoHashMap(usize, void);
 
 const Ctxt = struct {
     part1: usize,
@@ -39,7 +40,7 @@ const test_divisors: []const []const usize = &.{
     // 5
     &.{11111},
     // 6
-    &.{ 10101, },
+    &.{ 10101},
     // 7
     &.{1111111},
     // 8
@@ -47,12 +48,12 @@ const test_divisors: []const []const usize = &.{
     // 9
     &.{1001001},
     // 10
-    &.{ 101010101, },
+    &.{ 101010101},
     // 11
     &.{11111111111},
 };
 
-fn step(range: []const u8) Ctxt {
+fn step(allocator: Allocator, range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
     // TODO we are eating an extra 2x tests per digit here to ignore invalid digits when we could
@@ -66,53 +67,45 @@ fn step(range: []const u8) Ctxt {
 
     var part1: usize = 0;
     var part2: usize = 0;
+    var seen = Set.init(allocator);
+    defer seen.deinit();
 
-    // GRIPE for loop can't iterate inclusive ranges
-    for (l..u + 1) |i| {
-        const invalid1, const invalid2 = testInvalid(digits(i), i);
-        if (invalid1) part1 += i;
-        if (invalid2) part2 += i;
+    // std.log.debug("range {s}:", .{range});
+    for (digits(l)..digits(u)+1) |n_digits| {
+        const min = pow(usize, 10, n_digits - 1);
+        const max = pow(usize, 10, n_digits);
+        const tds = test_divisors[n_digits];
+        // std.log.debug("  {d}=[{d}, {d}] {any}", .{n_digits, min, max, tds});
+        if (n_digits % 2 == 0) {
+            const div = pow(usize, 10, n_digits / 2) + 1;
+            const invalid = testRange(&seen, div, @max(l, min), @min(u, max));
+            part1 += invalid;
+            part2 += invalid;
+        }
+        for (tds) |div| {
+            part2 += testRange(&seen, div, @max(l, min), @min(u, max));
+        }
     }
-    // const half_lower = len_lower / 2;
-    // const half_upper = len_upper / 2;
-    //
-    // const ll, const lu = if (half_lower == 0)
-    //     .{0, 0}
-    // else
-    //     .{
-    //         std.fmt.parseInt(i64, l[0..half_lower], 10) catch unreachable,
-    //         std.fmt.parseInt(i64, l[half_lower..], 10) catch unreachable
-    //     };
-    // const ul = std.fmt.parseInt(i64, u[0..half_upper], 10) catch unreachable;
-    // const uu = std.fmt.parseInt(i64, u[half_upper..], 10) catch unreachable;
-    //
-    // var invalid: i64 = 0;
-    //
-    // if (len_lower % 2 == 0) {
-    //     if (len_upper == len_lower) {
-    //         invalid = processRange(@intCast(half_lower), ll, lu, ul, uu);
-    //     } else {
-    //         invalid = processRange(@intCast(half_lower), ll, lu, pow(i64, 10, @intCast(half_lower)) - 1, pow(i64, 10, @intCast(half_lower)) - 1);
-    //     }
-    // }
-    //
-    // if (len_upper % 2 == 0) {
-    //     if (len_upper > len_lower) {
-    //         invalid += processRange(@intCast(half_upper), pow(i64, 10, (@intCast(half_lower))), 0, ul, uu);
-    //     }
-    // }
-    //
-    // if (half_upper > half_lower + 1) {
-    //     // GRIPE: you need this if statement, rather than just getting a loop that never executes its body, and the error if you don't is "integer overflow". Bug has been open for 3 years.
-    //     for (half_lower + 1 .. half_upper) |i| {
-    //         if (i % 2 == 1) continue;
-    //
-    //         const val = pow(i64, 10, @intCast(i));
-    //         invalid += val;
-    //     }
-    // }
-    //
     return .{ .part1 = part1, .part2 = part2 };
+}
+
+fn testRange(seen: *Set, divisor: usize, l: usize, u: usize) usize {
+    var count: usize = 0;
+    var i = l;
+    // advance i to next multiple of divisor if it is not already a multiple
+    i += divisor - ((i - 1) % divisor) - 1;
+    // increment i by divisor until hitting the end of the range. Count how many times this happens (that haven't happened before)
+    while (i <= u) {
+        // std.log.debug("    {d}", .{i});
+        if (!seen.contains(i)) {
+            count += i;
+            seen.put(i, {}) catch @panic("OOM");
+        } else {
+            // std.log.debug("double count on {d}", .{i});
+        }
+        i += divisor;
+    }
+    return count;
 }
 
 fn testInvalid(d: usize, i: usize) struct { bool, bool } {
@@ -151,11 +144,17 @@ pub fn main() !void {
 
     const reader = try aoc.Reader.init(allocator);
     // const res = try reader.foldDelim(',', Ctxt, .{ .part1 = 0, .part2 = 0 }, step);
-    const invalids = try aoc.parallel_map_unordered(allocator, try reader.iterDelim(','), Ctxt, []const u8, step);
+    // const invalids = try aoc.parallel_map_unordered(allocator, try reader.iterDelim(','), Ctxt, []const u8, step);
     var part1: usize = 0;
     var part2: usize = 0;
 
-    for (invalids.items) |item| {
+    // for (invalids.items) |item| {
+    //     part1 += item.part1;
+    //     part2 += item.part2;
+    // }
+    var ranges = try reader.iterDelim(',');
+    while (ranges.next()) |range| {
+        const item = step(allocator, range);
         part1 += item.part1;
         part2 += item.part2;
     }
