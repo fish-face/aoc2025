@@ -67,12 +67,14 @@ pub const Reader = struct {
         return self.foldDelim('\n', T, start, f);
     }
 
+    /// Split on delimiter and return an iterator
     pub fn iterDelim(self: Reader, delim: u8) !std.mem.TokenIterator(u8, .scalar) {
         const input = try self.mmap();
         const res = std.mem.tokenizeScalar(u8, input, delim);
         return res;
     }
 
+    /// Split on newline and return an iterator
     pub fn iterLines(self: Reader) !std.mem.TokenIterator(u8, .scalar) {
         return self.iterDelim('\n');
     }
