@@ -58,6 +58,9 @@ fn step(range: []const u8) Ctxt {
     // TODO we are eating an extra 2x tests per digit here to ignore invalid digits when we could
     //      more cheaply check the last char (as that's where a newline can sneak in) or otherwise
     //      ensure a newline there is stripped.
+    // TODO: opti plan: for each divisor d, divide i. Then add remainder to i to find next multiple of d, then:
+    //       if this multiple is in the range, add it to the total
+    //       else, stop testing this divisor
     const l = aoc.parse.atoi_stripped(usize, range[0..len_lower]);
     const u = aoc.parse.atoi_stripped(usize, range[len_lower + 1 ..]);
 
