@@ -40,7 +40,7 @@ const test_divisors: []const []const usize = &.{
     // 5
     &.{11111},
     // 6
-    &.{ 10101},
+    &.{10101},
     // 7
     &.{1111111},
     // 8
@@ -48,14 +48,13 @@ const test_divisors: []const []const usize = &.{
     // 9
     &.{1001001},
     // 10
-    &.{ 101010101},
+    &.{101010101},
     // 11
     &.{11111111111},
 };
 
 fn step(range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
-    // const len_upper = range.len - len_lower - 1;
     // TODO opti: we are eating an extra 2x tests per digit here to ignore invalid digits when we could
     //      more cheaply check the last char (as that's where a newline can sneak in) or otherwise
     //      ensure a newline there is stripped.
@@ -67,7 +66,7 @@ fn step(range: []const u8) Ctxt {
 
     // std.log.debug("range {s}:", .{range});
     // GRIPE for loop can't iterate inclusive ranges
-    for (digits(l)..digits(u)+1) |n_digits| {
+    for (digits(l)..digits(u) + 1) |n_digits| {
         const min = pow(usize, 10, n_digits - 1);
         const max = pow(usize, 10, n_digits);
         const tds = test_divisors[n_digits];
@@ -104,51 +103,18 @@ fn testRange(divisor: usize, l: usize, u: usize) usize {
     return @divTrunc(N * (first + first + (N - 1) * divisor), 2);
 }
 
-fn testInvalid(d: usize, i: usize) struct { bool, bool } {
-    if (d % 2 == 0) {
-        const p1div = pow(usize, 10, d / 2) + 1;
-        if (i % p1div == 0) {
-            // std.log.debug("{d} --> {d}: {d}", .{i, p1div, i / p1div});
-            return .{ true, true };
-        }
-    }
-    const tds = test_divisors[d];
-    for (tds) |div| {
-        if (i % div == 0) {
-            return .{ false, true };
-        }
-    }
-    return .{ false, false };
-}
-// fn processRange(digits: i64, ll: i64, lu: i64, ul: i64, uu: i64) Ctxt {
-//     // GRIPE: I can't add literal values in control-flow because they are "comptime_int" and for some reason don't get coerced to the actual type, and this is an error??
-//     const first = if (ll >= lu) ll else ll+1;
-//     const last = if (ul <= uu) ul else ul-1;
-//     const repeater = pow(i64, 10, digits) + 1;
-//
-//     if (first > last) return 0;
-//
-//     // arithmetic series
-//     const N = last - first + 1;
-//     return .{@divTrunc(N * repeater * (first + last), 2), 0};
-//     // GRIPE: can't iterate signed ranges with for lol
-//     // GRIPE: WHY THE FUCK CAN'T I FORMAT & PRINT BOOLEAN VALUES, NOR CAST THEM TO AN INTEGER IN A PRINT?
-// }
+// GRIPE: I can't add literal values in control-flow because they are "comptime_int" and for some reason don't get coerced to the actual type, and this is an error??
+// GRIPE: can't iterate signed ranges with for lol
+// GRIPE: WHY THE FUCK CAN'T I FORMAT & PRINT BOOLEAN VALUES, NOR CAST THEM TO AN INTEGER IN A PRINT?
 // GRIPE: you need this to test that end > start, rather than just getting a loop that never executes its body, and the error if you don't is "integer overflow". Bug has been open for 3 years.
 
 pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    // const res = try reader.foldDelim(',', Ctxt, .{ .part1 = 0, .part2 = 0 }, step);
-    // const invalids = try aoc.parallel_map_unordered(allocator, try reader.iterDelim(','), Ctxt, []const u8, step);
     var part1: usize = 0;
     var part2: usize = 0;
 
-    // for (invalids.items) |item| {
-    //     part1 += item.part1;
-    //     part2 += item.part2;
-    // }
     var ranges = try reader.iterDelim(',');
     while (ranges.next()) |range| {
         const item = step(range);
