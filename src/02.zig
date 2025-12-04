@@ -55,6 +55,9 @@ const test_divisors: []const []const usize = &.{
 fn step(range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
+    // TODO we are eating an extra 2x tests per digit here to ignore invalid digits when we could
+    //      more cheaply check the last char (as that's where a newline can sneak in) or otherwise
+    //      ensure a newline there is stripped.
     const l = aoc.parse.atoi_stripped(usize, range[0..len_lower]);
     const u = aoc.parse.atoi_stripped(usize, range[len_lower + 1 ..]);
 
