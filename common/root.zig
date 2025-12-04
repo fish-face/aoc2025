@@ -1,6 +1,8 @@
 pub const Reader = @import("reader.zig").Reader;
 pub const parallel_map_unordered = @import("parallel.zig").parallel_map_unordered;
 pub const parse = @import("parse.zig");
+pub const Grid = @import("grid.zig").Grid;
+pub const Pt = @import("coord.zig").Pt;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -8,6 +10,7 @@ const Allocator = std.mem.Allocator;
 const MEM_SIZE = 1024 * 1024 * 100; // 100 MB
 
 pub fn allocator() !Allocator {
+    // return std.heap.c_allocator;
     return std.heap.page_allocator;
     // TODO reinstate
     // GRIPE: why is unreachable code a compile error?
@@ -15,7 +18,6 @@ pub fn allocator() !Allocator {
     // const memory_buffer = try heap.alloc(
     //     u8, MEM_SIZE,
     // );
-    // // defer heap.free(memory_buffer);
     // const fba = try heap.create(std.heap.FixedBufferAllocator);
     // fba.* = .init(memory_buffer);
     // return fba.allocator();

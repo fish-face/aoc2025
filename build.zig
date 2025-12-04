@@ -5,7 +5,7 @@ const CompileStep = std.Build.Step.Compile;
 // GRIPE why the everloving fuck is the build file written in the language itself
 // UNGRIPE the zig build system is optional... OK
 
-const CUR_DAY = 3;
+const CUR_DAY = 4;
 
 /// set this to true to link libc
 const should_link_libc = false;

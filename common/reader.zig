@@ -2,6 +2,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const List = std.array_list.Managed;
 
+const Grid = @import("grid.zig").Grid;
+
 pub const Reader = struct {
     allocator: Allocator,
     path: []const u8,
@@ -77,6 +79,22 @@ pub const Reader = struct {
     /// Split on newline and return an iterator
     pub fn iterLines(self: Reader) !std.mem.TokenIterator(u8, .scalar) {
         return self.iterDelim('\n');
+    }
+
+    pub fn readGrid(self: Reader) !Grid(u8) {
+        const data = try self.mmap();
+        var stripped_data = List(u8).init(self.allocator);
+        var width: ?usize = null;
+        for (data, 0..) |byte, i| {
+            if (byte == '\n') {
+                if (width == null) {
+                    width = i;
+                }
+                continue;
+            }
+            try stripped_data.append(byte);
+        }
+        return Grid(u8).init(try stripped_data.toOwnedSlice(), width orelse @panic("no newline when parsing grid"));
     }
 
     /// Read entire file to a string
