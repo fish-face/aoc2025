@@ -1,4 +1,6 @@
 const std = @import("std");
+const List = std.ArrayList;
+
 const aoc = @import("aoc");
 const Allocator = std.mem.Allocator;
 const Grid = aoc.grid.PaddedGrid(u8, 1);
@@ -13,9 +15,6 @@ fn accessible(grid: Grid, p: usize) bool {
     }
     var n_neighbours: usize = 0;
     for (grid.neighbours8(p)) |q| {
-        // if (p == 39) {
-        //     std.log.debug("  {d}", .{q});
-        // }
         if (grid.ati(q)) |v| {
             if (v == '@') {
                 n_neighbours += 1;
@@ -40,20 +39,27 @@ fn part1(grid: Grid) usize {
 fn prat2(grid: *Grid) usize {
     var removed: usize = 0;
     var removed_any = true;
-
-    while (removed_any) {
-        var it = grid.coords();
-        removed_any = false;
-        while (it.next()) |p| {
-            if (accessible(grid.*, p)) {
-                removed += 1;
-                removed_any = true;
-                grid.seti(p, 'x');
-            }
-        }
-        // std.log.debug("{f}", .{grid.*});
+    // TODO opti: don't initialise?
+    // TODO opti: bitset/vec?
+    var buffer = [_]usize{0} ** (40000);
+    var queue = List(usize).initBuffer(&buffer);
+    var coords = grid.coords();
+    while (coords.next()) |p| {
+        queue.appendAssumeCapacity(p);
     }
 
+    while (queue.pop()) |p| {
+        if (accessible(grid.*, p)) {
+            removed += 1;
+            removed_any = true;
+            grid.seti(p, 'x');
+            for (grid.neighbours8(p)) |q| {
+                if (grid.containsi(q)) {
+                    queue.appendAssumeCapacity(q);
+                }
+            }
+        }
+    }
 
     return removed;
 }
@@ -68,7 +74,6 @@ pub fn main() !void {
 
     const p1 = part1(grid);
     const p2 = prat2(&grid);
-    // const p2 = 0;
 
     try aoc.print("{d}\n{d}\n", .{p1, p2});
 }

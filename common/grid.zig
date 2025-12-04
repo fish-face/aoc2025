@@ -99,6 +99,15 @@ pub fn PaddedGrid(comptime T: type, comptime padding: usize) type {
             self.allocator.free(self.data);
         }
 
+        pub fn containsi(self: Self, p: usize) bool {
+            return (
+                (p % (self.width) > 0) and
+                (p / (self.width) > 0) and
+                (p % (self.width) < self.width - 1) and
+                (p / (self.width) < self.height - 1)
+            );
+        }
+
         pub fn at(self: Self, p: Pt(usize)) ?T {
             return self.at2(p.x, p.y);
         }
