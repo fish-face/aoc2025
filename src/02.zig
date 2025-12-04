@@ -56,21 +56,26 @@ const test_divisors: []const []const usize = &.{
 fn step(allocator: Allocator, range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
-    // TODO we are eating an extra 2x tests per digit here to ignore invalid digits when we could
+    // TODO opti: we are eating an extra 2x tests per digit here to ignore invalid digits when we could
     //      more cheaply check the last char (as that's where a newline can sneak in) or otherwise
     //      ensure a newline there is stripped.
-    // TODO: opti plan: for each divisor d, divide i. Then add remainder to i to find next multiple of d, then:
-    //       if this multiple is in the range, add it to the total
-    //       else, stop testing this divisor
     const l = aoc.parse.atoi_stripped(usize, range[0..len_lower]);
     const u = aoc.parse.atoi_stripped(usize, range[len_lower + 1 ..]);
 
     var part1: usize = 0;
     var part2: usize = 0;
+
+    // TODO opti: this is a naive approach to avoid double-counting IDs which are multiples of more than one divisor
+    //            this happens with for example 111111: it is itself a test divisor, and also a multiple of 10101.
+    //            currently we're just checking we haven't counted the thing already with a hashset, but could instead
+    //            have a [][] of double-count divisors; we'd run the same check with each of these, but subtract the
+    //            number from the running total to eliminate those double counts.
+    //            This would also allow us to replace the explicit loop with a division, which is probably faster.
     var seen = Set.init(allocator);
     defer seen.deinit();
 
     // std.log.debug("range {s}:", .{range});
+    // GRIPE for loop can't iterate inclusive ranges
     for (digits(l)..digits(u)+1) |n_digits| {
         const min = pow(usize, 10, n_digits - 1);
         const max = pow(usize, 10, n_digits);
@@ -138,6 +143,7 @@ fn testInvalid(d: usize, i: usize) struct { bool, bool } {
 //     // GRIPE: can't iterate signed ranges with for lol
 //     // GRIPE: WHY THE FUCK CAN'T I FORMAT & PRINT BOOLEAN VALUES, NOR CAST THEM TO AN INTEGER IN A PRINT?
 // }
+// GRIPE: you need this to test that end > start, rather than just getting a loop that never executes its body, and the error if you don't is "integer overflow". Bug has been open for 3 years.
 
 pub fn main() !void {
     const allocator = try aoc.allocator();
