@@ -53,7 +53,7 @@ const test_divisors: []const []const usize = &.{
     &.{11111111111},
 };
 
-fn step(allocator: Allocator, range: []const u8) Ctxt {
+fn step(range: []const u8) Ctxt {
     const len_lower = std.mem.findScalar(u8, range, '-') orelse unreachable;
     // const len_upper = range.len - len_lower - 1;
     // TODO opti: we are eating an extra 2x tests per digit here to ignore invalid digits when we could
@@ -65,15 +65,6 @@ fn step(allocator: Allocator, range: []const u8) Ctxt {
     var part1: usize = 0;
     var part2: usize = 0;
 
-    // TODO opti: this is a naive approach to avoid double-counting IDs which are multiples of more than one divisor
-    //            this happens with for example 111111: it is itself a test divisor, and also a multiple of 10101.
-    //            currently we're just checking we haven't counted the thing already with a hashset, but could instead
-    //            have a [][] of double-count divisors; we'd run the same check with each of these, but subtract the
-    //            number from the running total to eliminate those double counts.
-    //            This would also allow us to replace the explicit loop with a division, which is probably faster.
-    var seen = Set.init(allocator);
-    defer seen.deinit();
-
     // std.log.debug("range {s}:", .{range});
     // GRIPE for loop can't iterate inclusive ranges
     for (digits(l)..digits(u)+1) |n_digits| {
@@ -83,34 +74,34 @@ fn step(allocator: Allocator, range: []const u8) Ctxt {
         // std.log.debug("  {d}=[{d}, {d}] {any}", .{n_digits, min, max, tds});
         if (n_digits % 2 == 0) {
             const div = pow(usize, 10, n_digits / 2) + 1;
-            const invalid = testRange(&seen, div, @max(l, min), @min(u, max));
+            const invalid = testRange(div, @max(l, min), @min(u, max));
             part1 += invalid;
             part2 += invalid;
         }
         for (tds) |div| {
-            part2 += testRange(&seen, div, @max(l, min), @min(u, max));
+            part2 += testRange(div, @max(l, min), @min(u, max));
+            if (n_digits == 6) {
+                // std.log.debug("  minus", .{});
+                part2 -= testRange(111111, @max(l, min), @min(u, max));
+            }
+            if (n_digits == 10) {
+                // std.log.debug("  minus", .{});
+                part2 -= testRange(1111111111, @max(l, min), @min(u, max));
+            }
         }
     }
     return .{ .part1 = part1, .part2 = part2 };
 }
 
-fn testRange(seen: *Set, divisor: usize, l: usize, u: usize) usize {
-    var count: usize = 0;
-    var i = l;
+fn testRange(divisor: usize, l: usize, u: usize) usize {
     // advance i to next multiple of divisor if it is not already a multiple
-    i += divisor - ((i - 1) % divisor) - 1;
-    // increment i by divisor until hitting the end of the range. Count how many times this happens (that haven't happened before)
-    while (i <= u) {
-        // std.log.debug("    {d}", .{i});
-        if (!seen.contains(i)) {
-            count += i;
-            seen.put(i, {}) catch @panic("OOM");
-        } else {
-            // std.log.debug("double count on {d}", .{i});
-        }
-        i += divisor;
+    const first = l + divisor - ((l - 1) % divisor) - 1;
+    if (first > u) {
+        return 0;
     }
-    return count;
+    // arithmetic series
+    const N = (u - first) / divisor + 1;
+    return @divTrunc(N * (first + first + (N - 1) * divisor), 2);
 }
 
 fn testInvalid(d: usize, i: usize) struct { bool, bool } {
@@ -160,7 +151,7 @@ pub fn main() !void {
     // }
     var ranges = try reader.iterDelim(',');
     while (ranges.next()) |range| {
-        const item = step(allocator, range);
+        const item = step(range);
         part1 += item.part1;
         part2 += item.part2;
     }
