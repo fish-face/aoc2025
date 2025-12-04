@@ -1,7 +1,8 @@
 pub const Reader = @import("reader.zig").Reader;
 pub const parallel_map_unordered = @import("parallel.zig").parallel_map_unordered;
 pub const parse = @import("parse.zig");
-pub const Grid = @import("grid.zig").Grid;
+pub const grid = @import("grid.zig");
+pub const Grid = grid.Grid;
 pub const Pt = @import("coord.zig").Pt;
 
 const std = @import("std");

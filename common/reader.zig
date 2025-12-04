@@ -2,7 +2,9 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const List = std.array_list.Managed;
 
-const Grid = @import("grid.zig").Grid;
+const grid = @import("grid.zig");
+const Grid = grid.Grid;
+const PaddedGrid = grid.PaddedGrid;
 
 pub const Reader = struct {
     allocator: Allocator,
@@ -95,6 +97,27 @@ pub const Reader = struct {
             try stripped_data.append(byte);
         }
         return Grid(u8).init(try stripped_data.toOwnedSlice(), width orelse @panic("no newline when parsing grid"));
+    }
+
+    pub fn readPaddedGrid(self: Reader, comptime padding: usize) !PaddedGrid(u8, padding) {
+        const data = try self.mmap();
+        var stripped_data = List(u8).init(self.allocator);
+        var width: ?usize = null;
+        for (data, 0..) |byte, i| {
+            if (byte == '\n') {
+                if (width == null) {
+                    width = i;
+                }
+                continue;
+            }
+            try stripped_data.append(byte);
+        }
+        // TODO opti: we are modifying the grid data twice, once to strip it, once to pad it.
+        return PaddedGrid(u8, padding).init(
+            self.allocator,
+            try stripped_data.toOwnedSlice(),
+            width orelse @panic("no newline when parsing grid")
+        );
     }
 
     /// Read entire file to a string
