@@ -54,7 +54,7 @@ fn prat2(grid: *Grid) usize {
             removed_any = true;
             grid.seti(p, 'x');
             for (grid.neighbours8(p)) |q| {
-                if (grid.containsi(q)) {
+                if (grid.ati(q) != null) {
                     queue.appendAssumeCapacity(q);
                 }
             }
