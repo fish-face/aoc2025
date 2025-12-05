@@ -15,6 +15,10 @@ const Range = struct {
         return std.math.order(item, self.l);
     }
 
+    fn cantBeIn(item: i64, self: Range) bool {
+        return item < self.l;
+    }
+
     // fn cmpItemU(item: i64, self: Range) std.math.Order {
     //     return std.math.order(item, self.u);
     // }
@@ -59,19 +63,20 @@ fn findItemLinear(ranges: List(Range), item: i64) bool {
     return false;
 }
 
-// fn findItem(ranges: []const Range, item: i64) bool {
-//     const res = std.sort.lowerBound(Range, ranges, item, Range.cmpItemL);
-//     std.log.debug("{any}-->{any}", .{item, res});
-//     // if (res == null) return false;
-//     for (ranges[res..]) |range| {
-//         std.log.debug("  testing {any}", .{range});
-//         if (item < range.l) return false;
-//         if (item <= range.u) return true;
-//     }
-//     return false;
-//     // std.log.debug("new found: {any}", .{if (res != null) ranges[res.?] else Range{.l = 0, .u = 0}});
-//     // return res != null;
-// }
+fn findItem(ranges: []const Range, item: i64) bool {
+    // const res = std.sort.upperBound(Range, ranges, item, Range.cmpItemL);
+    const res = std.sort.partitionPoint(Range, ranges, item, Range.cantBeIn);
+    std.log.debug("{any}-->{any}", .{item, res});
+    // if (res == null) return false;
+    for (ranges[res..]) |range| {
+        std.log.debug("  testing {any}", .{range});
+        if (item < range.l) return false;
+        if (item <= range.u) return true;
+    }
+    return false;
+    // std.log.debug("new found: {any}", .{if (res != null) ranges[res.?] else Range{.l = 0, .u = 0}});
+    // return res != null;
+}
 
 fn countRange(include: bool, current: Range, remaining: []const Range) i64 {
     var count: i64 = if (include) current.span() else -current.span();
@@ -93,9 +98,11 @@ pub fn main() !void {
     const fresh = try parseRanges(allocator, parts.next() orelse @panic("invalid input: no fresh part"));
     var available = std.mem.tokenizeScalar(u8, parts.next() orelse @panic("invalid input: no available part"), '\n');
     const freshSorted = fresh.items;
-    std.sort.heap(Range, freshSorted, {}, Range.lessThan);
+    // std.sort.heap(Range, freshSorted, {}, Range.lessThan);
 
-    // std.log.debug("{any}", .{freshSorted});
+    // for (freshSorted, 0..) |range, i| {
+    //     std.log.debug("{d}: {any}", .{i, range});
+    // }
 
     var part1: i64 = 0;
     var part2: i64 = 0;
@@ -112,8 +119,8 @@ pub fn main() !void {
     }
 
     for (freshSorted, 0..) |range, i| {
-        const end = @min(freshSorted.len, i+5);
-        part2 += countRange(true, range, freshSorted[i+1..end]);
+        // const end = @min(freshSorted.len, i+5);
+        part2 += countRange(true, range, freshSorted[i+1..]);
     }
 
     try aoc.print("{d}\n{d}\n", .{part1, part2});
