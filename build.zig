@@ -18,11 +18,6 @@ fn linkObject(b: *Build, obj: *CompileStep) void {
     // Add linking for packages or third party libraries here
 }
 
-const Dep = struct {
-    name: []const u8,
-    module: *Build.Module,
-};
-
 pub fn build(b: *Build) void {
     if (comptime @import("builtin").zig_version.order(required_zig_version) == .lt) {
         std.debug.print("Warning: Your version of Zig too old. You will need to download a newer build\n", .{});
@@ -31,13 +26,6 @@ pub fn build(b: *Build) void {
 
     const target = b.standardTargetOptions(.{});
     const mode = b.standardOptimizeOption(.{});
-
-    const ordered_dep = b.dependency("ordered", .{});
-    const ordered_module = ordered_dep.module("ordered");
-
-    const deps = [_]Dep{
-        .{.name = "ordered", .module = ordered_module},
-    };
 
     const install_all = b.step("install_all", "Install all days");
     const run_all = b.step("run_all", "Run all days");
@@ -88,9 +76,6 @@ pub fn build(b: *Build) void {
                 .{ .name = "aoc", .module = lib },
             },
         });
-        for (deps) |dep| {
-            mod.addImport(dep.name, dep.module);
-        }
         const exe = b.addExecutable(.{
             .name = dayString,
             .root_module = mod,

@@ -12,16 +12,16 @@ const MEM_SIZE = 1024 * 1024 * 100; // 100 MB
 
 pub fn allocator() !Allocator {
     // return std.heap.c_allocator;
-    // return std.heap.page_allocator;
+    return std.heap.page_allocator;
     // TODO reinstate
     // GRIPE: why is unreachable code a compile error?
-    const heap = std.heap.page_allocator;
-    const memory_buffer = try heap.alloc(
-        u8, MEM_SIZE,
-    );
-    const fba = try heap.create(std.heap.FixedBufferAllocator);
-    fba.* = .init(memory_buffer);
-    return fba.allocator();
+    // const heap = std.heap.page_allocator;
+    // const memory_buffer = try heap.alloc(
+    //     u8, MEM_SIZE,
+    // );
+    // const fba = try heap.create(std.heap.FixedBufferAllocator);
+    // fba.* = .init(memory_buffer);
+    // return fba.allocator();
 }
 
 pub fn print(comptime fmt: []const u8, args: anytype) !void {
