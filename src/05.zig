@@ -92,36 +92,39 @@ fn countRange(include: bool, current: Range, remaining: []const Range) i64 {
 pub fn main() !void {
     const allocator = try aoc.allocator();
 
-    const reader = try aoc.Reader.init(allocator);
-    var parts = std.mem.splitSequence(u8, try reader.mmap(), "\n\n");
+    for (0..100) |_| {
+        const reader = try aoc.Reader.init(allocator);
+        var parts = std.mem.splitSequence(u8, try reader.mmap(), "\n\n");
 
+        // GRIPE: the fact that you can comment out some code and have the rest fail to compile due to unused or unmutated variables with (?) no option to change it is really annoying
     const fresh = try parseRanges(allocator, parts.next() orelse @panic("invalid input: no fresh part"));
-    var available = std.mem.tokenizeScalar(u8, parts.next() orelse @panic("invalid input: no available part"), '\n');
-    const freshSorted = fresh.items;
-    std.sort.heap(Range, freshSorted, {}, Range.lessThan);
+        var available = std.mem.tokenizeScalar(u8, parts.next() orelse @panic("invalid input: no available part"), '\n');
+        const freshSorted = fresh.items;
+        std.sort.heap(Range, freshSorted, {}, Range.lessThan);
 
-    // for (freshSorted, 0..) |range, i| {
-    //     // std.log.debug("{d}: {any}", .{i, range});
-    // }
+        // for (freshSorted, 0..) |range, i| {
+        //     // std.log.debug("{d}: {any}", .{i, range});
+        // }
 
-    var part1: i64 = 0;
-    var part2: i64 = 0;
+        var part1: i64 = 0;
+        var part2: i64 = 0;
 
-    while (available.next()) |item| {
-        const itemInt = aoc.parse.atoi_stripped(i64, item);
-        const foundLinear = findItemLinear(fresh, itemInt);
-        // TODO opti: find with binary search (I gave up first time)
-        const found = findItem(freshSorted, itemInt);
-        if (foundLinear != found) {
-            std.log.err("WRONG! item {d}", .{itemInt});
+        while (available.next()) |item| {
+            const itemInt = aoc.parse.atoi_stripped(i64, item);
+            // TODO opti: find with binary search (I gave up first time)
+            // const found = findItemLinear(fresh, itemInt);
+            const found = findItem(freshSorted, itemInt);
+            // if (foundLinear != found) {
+            //     std.log.err("WRONG! item {d}", .{itemInt});
+            // }
+            if (found) part1 += 1;
         }
-        if (foundLinear) part1 += 1;
-    }
 
-    for (freshSorted, 0..) |range, i| {
-        const end = @min(freshSorted.len, i+5);
-        part2 += countRange(true, range, freshSorted[i+1..end]);
-    }
+        for (freshSorted, 0..) |range, i| {
+            const end = @min(freshSorted.len, i+5);
+            part2 += countRange(true, range, freshSorted[i+1..end]);
+        }
 
-    try aoc.print("{d}\n{d}\n", .{part1, part2});
+        try aoc.print("{d}\n{d}\n", .{part1, part2});
+    }
 }
