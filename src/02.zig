@@ -77,7 +77,7 @@ fn step(range: []const u8) Ctxt {
     // and part2 counts (how this is calculated is explained below)
     // Now we test the other divisors. These are prefiltered so e.g. for 6 digits, we don't include 111111, as 1001
     // divides 111111 so we have already accounted for this in part1.
-    // The final step is that for 6 and 10 there are divisors which cover more than one pattern. These are handled
+    // The final step is that for 6 and 10 there are still divisors which cover more than one pattern. These are handled
     // by subtracting the counts for the lowest common multiples of those divisors. Since there are only two such cases,
     // they are special cased.
     for (digits(l)..digits(u) + 1) |n_digits| {
