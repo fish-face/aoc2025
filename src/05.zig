@@ -92,7 +92,7 @@ fn countRange(include: bool, current: Range, remaining: []const Range) i64 {
 pub fn main() !void {
     const allocator = try aoc.allocator();
 
-    for (0..100) |_| {
+    // for (0..100) |_| {
         const reader = try aoc.Reader.init(allocator);
         var parts = std.mem.splitSequence(u8, try reader.mmap(), "\n\n");
 
@@ -126,5 +126,5 @@ pub fn main() !void {
         }
 
         try aoc.print("{d}\n{d}\n", .{part1, part2});
-    }
+    // }
 }
