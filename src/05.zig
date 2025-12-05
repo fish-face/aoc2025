@@ -15,8 +15,8 @@ const Range = struct {
         return std.math.order(item, self.l);
     }
 
-    fn cantBeIn(item: i64, self: Range) bool {
-        return item < self.l;
+    fn canBeIn(item: i64, self: Range) bool {
+        return item >= self.l;
     }
 
     // fn cmpItemU(item: i64, self: Range) std.math.Order {
@@ -65,12 +65,12 @@ fn findItemLinear(ranges: List(Range), item: i64) bool {
 
 fn findItem(ranges: []const Range, item: i64) bool {
     // const res = std.sort.upperBound(Range, ranges, item, Range.cmpItemL);
-    const res = std.sort.partitionPoint(Range, ranges, item, Range.cantBeIn);
-    std.log.debug("{any}-->{any}", .{item, res});
+    const res = std.sort.partitionPoint(Range, ranges, item, Range.canBeIn);
+    // std.log.debug("{any}-->{any}", .{item, res});
     // if (res == null) return false;
-    for (ranges[res..]) |range| {
-        std.log.debug("  testing {any}", .{range});
-        if (item < range.l) return false;
+    for (ranges[0..res]) |range| {
+        // std.log.debug("  testing {any}", .{range});
+        // if (item < range.l) return false;
         if (item <= range.u) return true;
     }
     return false;
@@ -98,10 +98,10 @@ pub fn main() !void {
     const fresh = try parseRanges(allocator, parts.next() orelse @panic("invalid input: no fresh part"));
     var available = std.mem.tokenizeScalar(u8, parts.next() orelse @panic("invalid input: no available part"), '\n');
     const freshSorted = fresh.items;
-    // std.sort.heap(Range, freshSorted, {}, Range.lessThan);
+    std.sort.heap(Range, freshSorted, {}, Range.lessThan);
 
     // for (freshSorted, 0..) |range, i| {
-    //     std.log.debug("{d}: {any}", .{i, range});
+    //     // std.log.debug("{d}: {any}", .{i, range});
     // }
 
     var part1: i64 = 0;
@@ -111,16 +111,16 @@ pub fn main() !void {
         const itemInt = aoc.parse.atoi_stripped(i64, item);
         const foundLinear = findItemLinear(fresh, itemInt);
         // TODO opti: find with binary search (I gave up first time)
-        // const found = findItem(freshSorted, itemInt);
-        // if (foundLinear != found) {
-        //     std.log.err("WRONG! item {d}", .{itemInt});
-        // }
+        const found = findItem(freshSorted, itemInt);
+        if (foundLinear != found) {
+            std.log.err("WRONG! item {d}", .{itemInt});
+        }
         if (foundLinear) part1 += 1;
     }
 
     for (freshSorted, 0..) |range, i| {
-        // const end = @min(freshSorted.len, i+5);
-        part2 += countRange(true, range, freshSorted[i+1..]);
+        const end = @min(freshSorted.len, i+5);
+        part2 += countRange(true, range, freshSorted[i+1..end]);
     }
 
     try aoc.print("{d}\n{d}\n", .{part1, part2});
