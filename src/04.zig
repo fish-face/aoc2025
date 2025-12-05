@@ -41,21 +41,24 @@ fn prat2(grid: *Grid) usize {
     var removed_any = true;
     // TODO opti: don't initialise?
     // TODO opti: bitset/vec?
-    var buffer = [_]usize{0} ** (40000);
-    var queue = List(usize).initBuffer(&buffer);
+    // var buffer = [_]usize{0} ** (40000);
+    // var queue = List(usize).initBuffer(&buffer);
+    var queue = std.bit_set.ArrayBitSet(usize, 400000).initEmpty();
     var coords = grid.coords();
     while (coords.next()) |p| {
-        queue.appendAssumeCapacity(p);
+        // queue.appendAssumeCapacity(p);
+        queue.set(p);
     }
 
-    while (queue.pop()) |p| {
+    while (queue.toggleFirstSet()) |p| {
         if (accessible(grid.*, p)) {
             removed += 1;
             removed_any = true;
             grid.seti(p, 'x');
             for (grid.neighbours8(p)) |q| {
                 if (grid.ati(q) != null) {
-                    queue.appendAssumeCapacity(q);
+                    // queue.appendAssumeCapacity(q);
+                    queue.set(q);
                 }
             }
         }
