@@ -49,12 +49,12 @@ fn prat2(grid: *Grid, queue: *List(usize)) [2]usize {
     var removed: usize = 0;
     var removed_any = true;
     // TODO opti: bitset/vec?
-    var coords = grid.coords();
-    while (coords.next()) |p| {
-        if (accessible(grid.*, p)) {
-            queue.appendAssumeCapacity(p);
-        }
-    }
+    // var coords = grid.coords();
+    // while (coords.next()) |p| {
+    //     if (accessible(grid.*, p)) {
+    //         queue.appendAssumeCapacity(p);
+    //     }
+    // }
 
     while (queue.pop()) |p| {
         if (accessible(grid.*, p)) {
