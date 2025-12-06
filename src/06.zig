@@ -10,7 +10,7 @@ pub fn main() !void {
     var p1: usize = 0;
     var p2: usize = 0;
 
-    for (0..100) |_| {
+    for (0..1) |_| {
         var lines = try reader.iterLines();
         var cols = [_][4]u16{[_]u16{undefined} ** 4} ** 1024;
         var ops = [_]u8{undefined} ** 1024;
