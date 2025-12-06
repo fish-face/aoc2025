@@ -8,7 +8,7 @@ persistence:
   - /code/.zig-cache
 code: /code
 workdir: /code
-runonce: zig build --release=fast install_day%zeroday%
+runonce: zig build -Dtarget=native --release=fast install_day%zeroday%
 cmd: zig-out/bin/day%zeroday% inputs/%zeroday%.txt
 daypath: src/%zeroday%.zig
 inputfile: inputs/%zeroday%.txt
