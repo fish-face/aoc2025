@@ -19,9 +19,9 @@ fn accessible(grid: Grid, p: usize) bool {
 }
 
 // TODO opti: store starting queue of accessible locs to do part2
-fn preprocessGrid(grid: *Grid) usize {
+fn preprocessGrid(grid: *Grid, queue: *List(usize)) void {
     var coords = grid.coords();
-    var num_accessible: usize = 0;
+    // var num_accessible: usize = 0;
     while (coords.next()) |p| {
         var n_neighbours: u8 = 0;
         if (grid.ati(p).? == '.') {
@@ -35,20 +35,20 @@ fn preprocessGrid(grid: *Grid) usize {
             }
         }
         grid.seti(p, n_neighbours);
-        if (n_neighbours < 4) num_accessible += 1;
+        if (n_neighbours < 4) {
+            queue.appendAssumeCapacity(p);
+        }
     }
     // std.log.debug("{f}", .{grid});
 
-    return num_accessible;
+    // return num_accessible;
 }
 
 // I'm sticking with the name
-fn prat2(grid: *Grid) [2]usize {
+fn prat2(grid: *Grid, queue: *List(usize)) [2]usize {
     var removed: usize = 0;
     var removed_any = true;
     // TODO opti: bitset/vec?
-    var buffer = [_]usize{undefined} ** (40000);
-    var queue = List(usize).initBuffer(&buffer);
     var coords = grid.coords();
     while (coords.next()) |p| {
         if (accessible(grid.*, p)) {
@@ -89,9 +89,11 @@ pub fn main() !void {
     var p2: usize = 0;
 
     for (0..1) |_| {
-        const pp1 = preprocessGrid(&grid);
-        _, const pp2 = prat2(&grid);
-        p1 += pp1;
+        var buffer = [_]usize{undefined} ** (40000);
+        var queue = List(usize).initBuffer(&buffer);
+        preprocessGrid(&grid, &queue);
+        p1 += queue.items.len;
+        _, const pp2 = prat2(&grid, &queue);
         p2 += pp2;
     }
 
