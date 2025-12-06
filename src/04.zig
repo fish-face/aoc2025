@@ -16,15 +16,6 @@ fn accessible(grid: Grid, p: usize) bool {
         }
     }
     return false;
-    // var n_neighbours: usize = 0;
-    // for (grid.neighbours8(p)) |q| {
-    //     if (grid.ati(q)) |v| {
-    //         if (v == '@') {
-    //             n_neighbours += 1;
-    //         }
-    //     }
-    // }
-    // return n_neighbours < 4;
 }
 
 // TODO opti: store starting queue of accessible locs to do part2
@@ -51,20 +42,8 @@ fn preprocessGrid(grid: *Grid) usize {
     return num_accessible;
 }
 
-// fn part1(grid: Grid) usize {
-//     var it = grid.coords();
-//     var n_accessible: usize = 0;
-//
-//     while (it.next()) |p| {
-//         // UNGRIPE: I worked out how to cast bool to int, the name is just a bit weird
-//         n_accessible += @intFromBool(accessible(grid, p));
-//     }
-//     return n_accessible;
-// }
-
 // I'm sticking with the name
 fn prat2(grid: *Grid) [2]usize {
-    // var part1: usize = 0;
     var removed: usize = 0;
     var removed_any = true;
     // TODO opti: bitset/vec?
@@ -72,11 +51,9 @@ fn prat2(grid: *Grid) [2]usize {
     var queue = List(usize).initBuffer(&buffer);
     var coords = grid.coords();
     while (coords.next()) |p| {
-        queue.appendAssumeCapacity(p);
-        // if (accessible(grid.*, p)) {
-        //     part1 += 1;
-        //     queue.appendAssumeCapacity(p);
-        // }
+        if (accessible(grid.*, p)) {
+            queue.appendAssumeCapacity(p);
+        }
     }
 
     while (queue.pop()) |p| {
@@ -86,10 +63,12 @@ fn prat2(grid: *Grid) [2]usize {
             grid.seti(p, '.');
             for (grid.neighbours8(p)) |q| {
                 if (grid.ati(q)) |qv| {
-                    if (qv > 0) {
+                    if (qv > 0 and qv != '.') {
                         grid.seti(q, qv - 1);
                     }
-                    queue.appendAssumeCapacity(q);
+                    if (qv == 4) {
+                        queue.appendAssumeCapacity(q);
+                    }
                 }
             }
         }
@@ -110,7 +89,6 @@ pub fn main() !void {
     var p2: usize = 0;
 
     for (0..1) |_| {
-        // p1 += part1(grid);
         const pp1 = preprocessGrid(&grid);
         _, const pp2 = prat2(&grid);
         p1 += pp1;
