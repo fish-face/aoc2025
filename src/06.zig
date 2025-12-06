@@ -34,7 +34,9 @@ pub fn main() !void {
 
         // std.log.debug("{any}", .{ops});
 
-        const num_lines = l - 1;
+        // NOTE swap to work on arbitrary numbers of lines (e.g. sample)
+        // const num_lines = l - 1;
+        const num_lines: usize = 4;
         const num_cols = c;
         var acc: u64 = 0;
 
