@@ -39,9 +39,8 @@ fn part1(grid: Grid) usize {
 fn prat2(grid: *Grid) usize {
     var removed: usize = 0;
     var removed_any = true;
-    // TODO opti: don't initialise?
     // TODO opti: bitset/vec?
-    var buffer = [_]usize{0} ** (40000);
+    var buffer = [_]usize{undefined} ** (40000);
     var queue = List(usize).initBuffer(&buffer);
     var coords = grid.coords();
     while (coords.next()) |p| {
