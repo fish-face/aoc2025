@@ -75,7 +75,15 @@ pub fn main() !void {
     var grid = try reader.readPaddedGrid(1);
     // std.log.debug("{f}", .{grid});
 
-    const p1, const p2 = prat2(&grid);
+    var p1: usize = 0;
+    var p2: usize = 0;
+
+    for (0..1) |_| {
+        // p1 += part1(grid);
+        const pp1, const pp2 = prat2(&grid);
+        p1 += pp1;
+        p2 += pp2;
+    }
 
     try aoc.print("{d}\n{d}\n", .{p1, p2});
 }
