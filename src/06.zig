@@ -10,7 +10,7 @@ pub fn main() !void {
     var p1: usize = 0;
     var p2: usize = 0;
 
-    for (0..1) |_| {
+    for (0..aoc.build_options.repeats) |_| {
         const num_lines: usize = 4;
 
         const input = try reader.mmap();

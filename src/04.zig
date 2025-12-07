@@ -82,13 +82,14 @@ pub fn main() !void {
 
     const reader = try aoc.Reader.init(allocator);
 
-    var grid = try reader.readPaddedGrid(1);
     // std.log.debug("{f}", .{grid});
 
     var p1: usize = 0;
     var p2: usize = 0;
 
-    for (0..1) |_| {
+    for (0..aoc.build_options.repeats) |_| {
+        var grid = try reader.readPaddedGrid(1);
+
         var buffer = [_]usize{undefined} ** (40000);
         var queue = List(usize).initBuffer(&buffer);
         preprocessGrid(&grid, &queue);

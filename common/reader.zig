@@ -128,6 +128,7 @@ pub const Reader = struct {
     /// Read entire file with mmap
     pub fn mmap(self: Reader) ![]u8 {
         const file = try std.fs.cwd().openFile(self.path, .{});
+        defer file.close();
         const handle = file.handle;
         const stats = try std.posix.fstat(handle);
         return std.posix.mmap(

@@ -129,12 +129,13 @@ pub fn main() !void {
     const reader = try aoc.Reader.init(allocator);
     var part1: usize = 0;
     var part2: usize = 0;
-
-    var ranges = try reader.iterDelim(',');
-    while (ranges.next()) |range| {
-        const item = step(range);
-        part1 += item.part1;
-        part2 += item.part2;
+    for (0..aoc.build_options.repeats) |_| {
+        var ranges = try reader.iterDelim(',');
+        while (ranges.next()) |range| {
+            const item = step(range);
+            part1 += item.part1;
+            part2 += item.part2;
+        }
     }
     try aoc.print("{d}\n{d}\n", .{ part1, part2 });
 }

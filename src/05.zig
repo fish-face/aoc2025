@@ -74,23 +74,27 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    var parts = std.mem.splitSequence(u8, try reader.mmap(), "\n\n");
+    var part1: i64 = undefined;
+    var part2: i64 = undefined;
+    for (0..aoc.build_options.repeats) |_| {
+        var parts = std.mem.splitSequence(u8, try reader.mmap(), "\n\n");
 
-    // GRIPE: the fact that you can comment out some code and have the rest fail to compile due to unused or unmutated variables with (?) no option to change it is really annoying
+        // GRIPE: the fact that you can comment out some code and have the rest fail to compile due to unused or unmutated variables with (?) no option to change it is really annoying
 
-    var edges: [512]Edge = undefined;
-    const num_edges = try parseRanges(parts.next() orelse @panic("invalid input: no fresh part"), &edges);
-    var available: [2048]i64 = .{0} ** 2048;
-    const num_available = aoc.parse.parseInts(
-        i64,
-        &available,
-        parts.next() orelse @panic("invalid input: no available part"),
-        '\n',
-    );
+        var edges: [512]Edge = undefined;
+        const num_edges = try parseRanges(parts.next() orelse @panic("invalid input: no fresh part"), &edges);
+        var available: [2048]i64 = .{0} ** 2048;
+        const num_available = aoc.parse.parseInts(
+            i64,
+            &available,
+            parts.next() orelse @panic("invalid input: no available part"),
+            '\n',
+        );
 
-    std.mem.sort(i64, available[0..num_available], {}, std.sort.asc(i64));
+        std.mem.sort(i64, available[0..num_available], {}, std.sort.asc(i64));
 
-    const part1, const part2 = solve(edges[0..num_edges], available[0..num_available]);
+        part1, part2 = solve(edges[0..num_edges], available[0..num_available]);
+    }
 
     try aoc.print("{d}\n{d}\n", .{part1, part2});
 }

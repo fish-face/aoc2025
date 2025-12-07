@@ -27,6 +27,16 @@ pub fn build(b: *Build) void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardOptimizeOption(.{});
 
+    const repeats = b.option(
+        usize,
+        "repeats",
+        "Runs the main function repeatedly, for benchmarking purposes"
+    ) orelse 1;
+
+    // GRIPE: oh yeah, THIS totally makes sense as a way to do things. Mmhm. Yep. No pointless repetition here!
+    const options = b.addOptions();
+    options.addOption(usize, "repeats", repeats);
+
     const install_all = b.step("install_all", "Install all days");
     const run_all = b.step("run_all", "Run all days");
     const test_all = b.step("test_all", "Run all tests");
@@ -51,6 +61,7 @@ pub fn build(b: *Build) void {
         .target = target,
         .optimize = mode,
     });
+    lib.addOptions("build_options", options);
 
     {
         const test_lib = b.step("test_lib", "Run tests of library");

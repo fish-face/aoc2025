@@ -35,12 +35,14 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    var lines = try reader.iterLines();
     var p1: u64 = 0;
     var p2: u64 = 0;
-    while (lines.next()) |line| {
-        p1 += part1(line);
-        p2 += part2(line);
+    for (0..aoc.build_options.repeats) |_| {
+        var lines = try reader.iterLines();
+        while (lines.next()) |line| {
+            p1 += part1(line);
+            p2 += part2(line);
+        }
     }
     try aoc.print("{d}\n{d}\n", .{ p1, p2 });
 }

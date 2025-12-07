@@ -14,7 +14,7 @@ bench() {
   if [ -n "$1" ]; then
     shift
   fi
-  zig build install_day$day -Dtarget=native --release=fast && \
+  zig build install_day$day -Drepeats=1000 -Dtarget=native --release=fast && \
     echo "-N $@ \"zig-out/bin/day$day inputs/$day.txt\"" && \
     hyperfine -N $@ "zig-out/bin/day$day inputs/$day.txt"
 }

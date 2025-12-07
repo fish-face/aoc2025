@@ -64,9 +64,12 @@ pub fn main() !void {
     const allocator = try aoc.allocator();
 
     const reader = try aoc.Reader.init(allocator);
-    const ctxt: Ctxt = .{ .n = 50, .part1 = 0, .part2 = 0 };
-    const res = try reader.foldLines(Ctxt, ctxt, step);
+    var res: Ctxt = undefined;
 
+    for (0..aoc.build_options.repeats) |_| {
+        const ctxt: Ctxt = .{ .n = 50, .part1 = 0, .part2 = 0 };
+        res = try reader.foldLines(Ctxt, ctxt, step);
+    }
     try aoc.print("{d}\n", .{res.part1});
     try aoc.print("{d}\n", .{res.part2});
 }
