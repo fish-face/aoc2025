@@ -11,21 +11,38 @@ pub fn main() !void {
     var p2: usize = 0;
 
     for (0..aoc.build_options.repeats) |_| {
+        // there is also a line with the ops in it. Hopefully everyone's input is the same height.
+        // need to change to read the sample data.
         const num_lines: usize = 4;
 
         const input = try reader.mmap();
         // TODO opti?
         const line_len = std.mem.findScalar(u8, input, '\n').? + 1;
-        // var cols = [_][4]u16{ [_]u16{undefined} ** 4} ** 4096;
+
+        // We're going to process the input a block at a time.
+        // If the block looks like this:
+        // 123
+        // 45
+        // 6
+        // +
+        // We start at the 1, and go down the column. Each digit accumulates into the single value in num_acc,
+        // and also starts accumulating into the corresponding entry of col_acc. After the first pass we have
+        // 146 in num_acc and [1, 4, 6] in col_acc.
+        // We then record the operator (which is always at the left edge of the block), and put num_acc into block_acc.
+        // Continuing, we can accumulate 25 in num_acc then, on reaching the bottom, add it to block_acc. (Had the
+        // operator been * we would multiply it). That sorts out part2.
+        // For part1, we finish the block with [123, 45, 6] in col_acc and just add or multiply them.
 
         // accumulator for the part2 value of the block
         var block_acc: u64 = undefined;
+        // operator for the current block
         var op: u8 = 0;
+        // 1 accumulator for each horizontal number in the current block
         var col_acc = [_]u64{0} ** 4;
+
         for (0..line_len - 1) |i| {
             // accumulator for the vertical number
             var num_acc: u64 = 0;
-            // 1 accumulator for each horizontal number
 
             for (0..num_lines) |ll| {
                 const digit = input[i + ll * line_len];
