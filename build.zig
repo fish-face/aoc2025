@@ -5,7 +5,7 @@ const CompileStep = std.Build.Step.Compile;
 // GRIPE why the everloving fuck is the build file written in the language itself
 // UNGRIPE the zig build system is optional... OK
 
-const CUR_DAY = 6;
+const CUR_DAY = 7;
 
 /// set this to true to link libc
 const should_link_libc = false;
@@ -32,10 +32,16 @@ pub fn build(b: *Build) void {
         "repeats",
         "Runs the main function repeatedly, for benchmarking purposes"
     ) orelse 1;
+    const sample_mode = b.option(
+        bool,
+        "sample_mode",
+        "Builds a version specialised to the sample input",
+    ) orelse false;
 
     // GRIPE: oh yeah, THIS totally makes sense as a way to do things. Mmhm. Yep. No pointless repetition here!
     const options = b.addOptions();
     options.addOption(usize, "repeats", repeats);
+    options.addOption(bool, "sample_mode", sample_mode);
 
     const install_all = b.step("install_all", "Install all days");
     const run_all = b.step("run_all", "Run all days");

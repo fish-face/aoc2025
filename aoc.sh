@@ -3,6 +3,7 @@ create() {
     touch "src/${day}.zig"
     touch "samples/${day}.txt"
     touch "inputs/${day}.txt"
+    sed -i 's/CUR_DAY = .*;/CUR_DAY = '"$day"';' build.zig
 }
 
 day() {
@@ -24,7 +25,7 @@ r() {
 }
 
 rs() {
-    zig build day$(day $1) -- samples/$(day $1).txt
+    zig build day$(day $1) -Dsample_mode=true -- samples/$(day $1).txt
 }
 
 br() {
