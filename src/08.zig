@@ -34,6 +34,17 @@ fn dist(a: [3]T, b: [3]T) u64 {
     );
 }
 
+const DistInfo = struct {
+    d: u64,
+    i: usize,
+    j: usize,
+
+    pub fn compare(_: void, a: @This(), b: @This()) bool {
+        // return std.math.order(a.d, b.d);
+        return a.d < b.d;
+    }
+};
+
 pub fn main() !void {
     const allocator = try aoc.allocator();
 
@@ -42,13 +53,20 @@ pub fn main() !void {
     var p1: usize = 0;
     var p2: usize = 0;
 
+    // TODO opti if you sort everything in one axis initially, you get a lower bound on distances and can discard/
+    //      save some for later
     for (0..REPEATS) |repeat| {
         // var coords = [_][3]T{undefined, undefined, undefined} ** DISTS;
         // var distances = [_]u64{undefined} ** PAIRS;
         // var indices = [_][2]usize{undefined} ** 2 ** PAIRS;
         var coords = try List([3]T).initCapacity(allocator, DISTS);
-        var distances = try List(u64).initCapacity(allocator, PAIRS);
-        var indices = try List([2]usize).initCapacity(allocator, PAIRS);
+        // var distances = try List(u64).initCapacity(allocator, PAIRS);
+        // var indices = try List([2]usize).initCapacity(allocator, PAIRS);
+        // const dist_info_buffer = try allocator.alloc(DistInfo, PAIRS);
+        // var dist_info = std.PriorityQueue(DistInfo, void, DistInfo.compare).fromOwnedSlice(allocator, dist_info_buffer, {});
+        // var dist_info = std.PriorityQueue(DistInfo, void, DistInfo.compare).init(allocator, {});
+        // try dist_info.ensureTotalCapacity(PAIRS);
+        var dist_info = try List(DistInfo).initCapacity(allocator, PAIRS);
 
         {
             var it = try reader.iterLines();
@@ -58,29 +76,32 @@ pub fn main() !void {
                 coords.appendAssumeCapacity(coord);
                 for (0..i) |j| {
                     const d = dist(coords.items[j], coord);
-                    distances.appendAssumeCapacity(d);
-                    indices.appendAssumeCapacity(.{i, j});
+                    // distances.appendAssumeCapacity(d);
+                    // indices.appendAssumeCapacity(.{i, j});
+                    // dist_info.addUnchecked(.{.d = d, .i = i, .j = j});
+                    dist_info.appendAssumeCapacity(.{.d = d, .i = i, .j = j});
                 }
                 // std.log.debug("{any}", .{coord});
             i += 1;
             }
         }
 
-        const SortCtxt = struct {
-            distances: []u64,
-            indices: [][2]usize,
-            pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
-                return ctx.distances[a] < ctx.distances[b];
-            }
-            pub fn swap(ctx: @This(), a: usize, b: usize) void {
-                std.mem.swap(u64, &ctx.distances[a], &ctx.distances[b]);
-                std.mem.swap([2]usize, &ctx.indices[a], &ctx.indices[b]);
-            }
-        };
-        std.mem.sortUnstableContext(
-            0,
-            PAIRS,
-            SortCtxt{.distances = distances.items, .indices = indices.items}
+        // const SortCtxt = struct {
+        //     distances: []u64,
+        //     indices: [][2]usize,
+        //     pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+        //         return ctx.distances[a] < ctx.distances[b];
+        //     }
+        //     pub fn swap(ctx: @This(), a: usize, b: usize) void {
+        //         std.mem.swap(u64, &ctx.distances[a], &ctx.distances[b]);
+        //         std.mem.swap([2]usize, &ctx.indices[a], &ctx.indices[b]);
+        //     }
+        // };
+        std.sort.heap(
+            DistInfo,
+            dist_info.items,
+            {},
+            DistInfo.compare,
         );
         // std.log.debug("{any}", .{distances.items[0..10]});
         // std.log.debug("{any}", .{indices.items[0..10]});
@@ -88,16 +109,18 @@ pub fn main() !void {
         var circuits = [_]?u16{null} ** DISTS;
         var p1circuits = [_]?u16{null} ** DISTS;
         var last_pair: [2]usize = undefined;
+        var n: usize = 0;
 
-        for (indices.items, 0..) |idx, n| {
+        // while (dist_info.removeOrNull()) |info| {
+        for (dist_info.items) |info| {
             if (n == LIMIT) {
                 p1circuits = circuits;
             }
-            const i, const j = idx;
             // TODO is it better to scan the circuits each iteration, rather than going to the end?
-            if (circuits[i]) |a| {
-                if (circuits[j]) |b| {
+            if (circuits[info.i]) |a| {
+                if (circuits[info.j]) |b| {
                     if (a != b) {
+                        // TODO opti: maintain a map so we can do this without linear search
                         // both points already have a circuit assigned; search for those matching a and set them to that of b
                         // std.log.debug("merging {d} --> {d}", .{a, b});
                         for (circuits, 0..) |aa, ii| {
@@ -105,23 +128,25 @@ pub fn main() !void {
                                 circuits[ii] = b;
                             }
                         }
-                        last_pair = .{i, j};
+                        last_pair = .{info.i, info.j};
                     }
                 } else {
-                    circuits[j] = a;
-                    last_pair = .{i, j};
+                    circuits[info.j] = a;
+                    last_pair = .{info.i, info.j};
                     // std.log.debug("joining previously isolated: {d} to {d} --> {d}", .{j, i, a});
                 }
-            } else if (circuits[j]) |b| {
-                circuits[i] = b;
-                last_pair = .{i, j};
+            } else if (circuits[info.j]) |b| {
+                circuits[info.i] = b;
+                last_pair = .{info.i, info.j};
                 // std.log.debug("joining previously isolated: {d} to {d} --> {d}", .{i, j, b});
             } else {
                 // std.log.debug("joining previously isolated: {d}, {d} --> {d}", .{i, j, n});
-                circuits[i] = @intCast(n);
-                circuits[j] = @intCast(n);
-                last_pair = .{i, j};
+                circuits[info.i] = @intCast(n);
+                circuits[info.j] = @intCast(n);
+                last_pair = .{info.i, info.j};
             }
+
+            n += 1;
         }
         // std.log.debug("{any}", .{circuits});
 
