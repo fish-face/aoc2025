@@ -8,7 +8,7 @@ const Pt = aoc.Pt;
 const WIDTH = if (aoc.build_options.sample_mode) 11 else 100000;
 const POINTS = if (aoc.build_options.sample_mode) 9 else 1024;
 
-const REPEATS = if (aoc.build_options.repeats > 0) 10 else 1;
+const REPEATS = if (aoc.build_options.repeats > 1) 10 else 1;
 
 fn lessThan(_: void, a: Pt(u64), b: Pt(u64)) bool {
     return a.y < b.y or (a.y == b.y and a.x < b.x);
