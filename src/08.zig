@@ -56,12 +56,7 @@ pub fn main() !void {
     // TODO opti if you sort everything in one axis initially, you get a lower bound on distances and can discard/
     //      save some for later
     for (0..REPEATS) |repeat| {
-        // var coords = [_][3]T{undefined, undefined, undefined} ** DISTS;
-        // var distances = [_]u64{undefined} ** PAIRS;
-        // var indices = [_][2]usize{undefined} ** 2 ** PAIRS;
         var coords = try List([3]T).initCapacity(allocator, DISTS);
-        // var distances = try List(u64).initCapacity(allocator, PAIRS);
-        // var indices = try List([2]usize).initCapacity(allocator, PAIRS);
         // const dist_info_buffer = try allocator.alloc(DistInfo, PAIRS);
         // var dist_info = std.PriorityQueue(DistInfo, void, DistInfo.compare).fromOwnedSlice(allocator, dist_info_buffer, {});
         // var dist_info = std.PriorityQueue(DistInfo, void, DistInfo.compare).init(allocator, {});
@@ -86,18 +81,7 @@ pub fn main() !void {
             }
         }
 
-        // const SortCtxt = struct {
-        //     distances: []u64,
-        //     indices: [][2]usize,
-        //     pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
-        //         return ctx.distances[a] < ctx.distances[b];
-        //     }
-        //     pub fn swap(ctx: @This(), a: usize, b: usize) void {
-        //         std.mem.swap(u64, &ctx.distances[a], &ctx.distances[b]);
-        //         std.mem.swap([2]usize, &ctx.indices[a], &ctx.indices[b]);
-        //     }
-        // };
-        std.sort.heap(
+        std.sort.pdq(
             DistInfo,
             dist_info.items,
             {},
@@ -107,15 +91,12 @@ pub fn main() !void {
         // std.log.debug("{any}", .{indices.items[0..10]});
 
         var circuits = [_]?u16{null} ** DISTS;
-        var p1circuits = [_]?u16{null} ** DISTS;
         var last_pair: [2]usize = undefined;
+        var counts = [_]u16{0} ** DISTS;
         var n: usize = 0;
 
         // while (dist_info.removeOrNull()) |info| {
         for (dist_info.items) |info| {
-            if (n == LIMIT) {
-                p1circuits = circuits;
-            }
             // TODO is it better to scan the circuits each iteration, rather than going to the end?
             if (circuits[info.i]) |a| {
                 if (circuits[info.j]) |b| {
@@ -123,6 +104,10 @@ pub fn main() !void {
                         // TODO opti: maintain a map so we can do this without linear search
                         // both points already have a circuit assigned; search for those matching a and set them to that of b
                         // std.log.debug("merging {d} --> {d}", .{a, b});
+                        if (n < LIMIT) {
+                            counts[b] += counts[a];
+                            counts[a] = 0;
+                        }
                         for (circuits, 0..) |aa, ii| {
                             if (aa == a) {
                                 circuits[ii] = b;
@@ -131,16 +116,25 @@ pub fn main() !void {
                         last_pair = .{info.i, info.j};
                     }
                 } else {
+                    if (n < LIMIT) {
+                        counts[a] += 1;
+                    }
                     circuits[info.j] = a;
                     last_pair = .{info.i, info.j};
                     // std.log.debug("joining previously isolated: {d} to {d} --> {d}", .{j, i, a});
                 }
             } else if (circuits[info.j]) |b| {
+                if (n < LIMIT) {
+                    counts[b] += 1;
+                }
                 circuits[info.i] = b;
                 last_pair = .{info.i, info.j};
                 // std.log.debug("joining previously isolated: {d} to {d} --> {d}", .{i, j, b});
             } else {
                 // std.log.debug("joining previously isolated: {d}, {d} --> {d}", .{i, j, n});
+                if (n < LIMIT) {
+                    counts[n] = 2;
+                }
                 circuits[info.i] = @intCast(n);
                 circuits[info.j] = @intCast(n);
                 last_pair = .{info.i, info.j};
@@ -149,14 +143,6 @@ pub fn main() !void {
             n += 1;
         }
         // std.log.debug("{any}", .{circuits});
-
-        // TODO opti track in above loop
-        var counts = [_]u16{0} ** DISTS;
-        for (p1circuits) |circuit| {
-            if (circuit) |c| {
-                counts[@intCast(c)] += 1;
-            }
-        }
 
         std.mem.sortUnstable(u16, &counts, {}, std.sort.desc(u16));
 
