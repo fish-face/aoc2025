@@ -5,6 +5,7 @@ pub const grid = @import("grid.zig");
 pub const Grid = grid.Grid;
 pub const Pt = @import("coord.zig").Pt;
 pub const build_options = @import("build_options");
+pub const Matrix = @import("matrix.zig").Matrix;
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

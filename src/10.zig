@@ -6,6 +6,361 @@ const Queue = std.PriorityQueue;
 const HashMap = std.AutoHashMap;
 const findScalar = std.mem.findScalar;
 
+const T = f64;
+const Matrix = aoc.Matrix(T);
+
+fn simplexMatrix(allocator: Allocator, prob: Problem) !T {
+    const num_buttons = prob.p2buttons.len;
+    const num_joltages = prob.p2target.len;
+    var matrix = try Matrix.zeroes(
+        allocator,
+        num_buttons + 2,
+        num_joltages + 1,
+    );
+    defer matrix.deinit();
+
+    for (prob.p2target, 1..) |joltage, j| {
+        matrix.set(j, 1 + num_buttons, @floatFromInt(joltage));
+    }
+    matrix.set(0, 0, 1);
+    for (prob.p2buttons, 1..) |button, i| {
+        matrix.set(0, i, 1);
+        for (button, 0..) |btn_val, j| {
+            _ = j;
+            matrix.set(num_joltages - btn_val, i, 1.0);
+        }
+    }
+
+    // var pivots = try allocator.alloc(usize, num_buttons);
+    // std.log.debug("{f}", .{matrix});
+    matrix.ge();
+    // std.log.debug("{f}", .{matrix});
+    const rank = matrix.rank();
+
+    const matrix_data_copy = try allocator.alloc(T, matrix.data.len);
+    defer allocator.free(matrix_data_copy);
+    @memcpy(matrix_data_copy, matrix.data);
+    const matrix_copy = Matrix.initBuffer(matrix_data_copy, matrix.cols);
+
+
+    // const x = try allocator.alloc(T, num_joltages);
+    var x = try List(T).initCapacity(allocator, num_joltages);
+    solve(&x, matrix);
+    // std.log.debug("solution: {any} min: {d}", .{x, std.mem.min});
+    while (std.mem.min(T, x.items) < -1e-10) {
+        // std.log.debug("infeasible, {any}", .{x});
+        const row = std.mem.findMin(T, x.items);
+        // + 1 due to row of costs at the top
+        const col = std.mem.findMin(T, matrix.row(row + 1)[1.. matrix.cols - 1]);
+        matrix.eliminate(row + 1, col + 1);
+        // std.log.debug("eliminated {f}", .{matrix});
+        solve(&x, matrix);
+        // break;
+    }
+    // std.log.debug("basic feasible{f}", .{matrix});
+
+    while (simplexStep(&matrix)) {
+        // std.log.debug("simplex {f}", .{matrix});
+    }
+
+    // std.log.debug("{f}", .{matrix});
+    // std.log.debug("cost? {d}", .{-matrix.at(0, matrix.cols - 1)});
+    solve(&x, matrix);
+    if (allInteger(x.items)) {
+        // Simplex found an integer solution and we can return it
+        // std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
+        return -matrix.at(0, matrix.cols - 1);
+    }
+    return bruteForce(matrix_copy, rank);
+}
+
+fn bruteForce(m: Matrix, rank: usize) T {
+    var free_vars = [_]usize{0, 0, 0};
+    var free_vals = [_]T{0, 0, 0};
+    const num_free = m.cols - rank - 2;
+
+    var best: T = std.math.floatMax(T);
+
+    var free_pos: usize = 0;
+    var free_i: usize = 0;
+
+    for (1..m.cols - 1) |c| {
+        if (free_pos + 1 < m.rows and isBasicCol(m, free_pos + 1, c)) {
+            // std.log.debug("basic @ {d},{d}", .{free_pos + 1, c});
+            free_pos += 1;
+        } else {
+            // std.log.debug("nonbasic @ {d},{d}", .{free_pos + 1, c});
+            free_vars[free_i] = c - 1;
+            free_i += 1;
+            if (free_i >= num_free) break;
+        }
+        // if (free_pos + 1 >= m.rows) {
+        //     break;
+        // }
+    }
+
+    // std.log.debug("brute forcing: {d}, {any}", .{num_free, free_vars});
+
+    if (num_free == 1) {
+        for (0..50) |x_| {
+            const x: isize = @as(isize, @intCast(x_)) - 0;
+            free_vals[0] = @floatFromInt(x);
+            const cost = eval_cost(&m, free_vars[0..1], free_vals[0..1]);
+            best = @min(
+                best,
+                cost,
+            );
+            // std.log.debug("cost: {d} best: {d}", .{cost, best});
+        }
+    } else if (num_free == 2) {
+        for (0..50) |x_| {
+            for (0..50) |y_| {
+                const x: isize = @as(isize, @intCast(x_)) - 0;
+                const y: isize = @as(isize, @intCast(y_)) - 0;
+                free_vals[0] = @floatFromInt(x);
+                free_vals[1] = @floatFromInt(y);
+                const cost = eval_cost(&m, free_vars[0..2], free_vals[0..2]);
+                best = @min(
+                    best,
+                    cost,
+                );
+                // std.log.debug("cost: {d} best: {d}", .{cost, best});
+            }
+        }
+    } else if (num_free == 3) {
+        for (0..50) |x_| {
+            for (0..50) |y_| {
+                for (0..50) |z_| {
+                    const x: isize = @as(isize, @intCast(x_)) - 0;
+                    const y: isize = @as(isize, @intCast(y_)) - 0;
+                    const z: isize = @as(isize, @intCast(z_)) - 0;
+                    free_vals[0] = @floatFromInt(x);
+                    free_vals[1] = @floatFromInt(y);
+                    free_vals[2] = @floatFromInt(z);
+                    const cost = eval_cost(&m, free_vars[0..3], free_vals[0..3]);
+                    best = @min(
+                        best,
+                        cost,
+                    );
+                    // std.log.debug("cost: {d} best: {d}", .{cost, best});
+                }
+            }
+        }
+    }
+
+    // std.log.debug("rank {d} free {d}", .{rank, num_free});
+    // std.log.warn("best: {d}", .{best});
+
+    return best;
+}
+
+fn eval_cost(m: *const Matrix, free_vars: []const usize, free_vals: []const T) T {
+    // Storage for multiplicand
+    var x_ = [_]T{0} ** 50;
+    var x = x_[0..m.cols - 2];
+
+    // var i: usize = 0;
+    // for (0..m.cols - 2) |c| {
+    //     if (c == free_vars[i]) {
+    //         x[c] = free_vals[i];
+    //         i += 1;
+    //         if (i >= free_vars.len) {
+    //             break;
+    //         }
+    //     }
+    // }
+    for (free_vars, free_vals) |i, v| {
+        x[i] = v;
+    }
+
+    // Storage for result of multiplying m by a candidate vector
+    var out_ = [_]T{0} ** 50;
+    // truncate to actual size of output (which is number of targets)
+    var out = out_[0..m.rows - 1];
+
+    // Evaluate target - m * x and put result into out:
+    for (0..m.rows - 1) |r| {
+        // +1 to skip top row of costs
+        const row = m.row(r + 1);
+        out[r] = row[row.len - 1];
+        // std.log.debug("{any}", .{row[1..row.len - 1]});
+        for (row[1..row.len - 1], 0..) |entry, c| {
+            // no +1 because this is exactly sized
+            // std.log.debug("{d},{d} = {d}*{d}", .{r, c, entry, x[c]});
+            out[r] -= entry * x[c];
+        }
+    }
+
+    // std.log.warn("m: {f}", .{m});
+    // std.log.debug("free: {any}", .{free_vars});
+    // std.log.debug("free: {any}", .{free_vals});
+    // std.log.debug("x: {any}", .{x});
+    // std.log.debug("out: {any}", .{out});
+
+    if (!allInteger(out) or !allNonNeg(out)) {
+        return std.math.floatMax(T);
+    }
+    // The value in out is how much to "adjust" the target col in the augmented matrix
+    // to use for the values of the basic variables. Since the cost of a solution is
+    // the sum of the values of all variables, we just sum the target col (as normal),
+    // add the sum of out, then add the sum of the free vars.
+
+    var res: T = 0;
+    for (out) |v| {
+        res += v;
+    }
+    for (free_vals) |v| {
+        res += v;
+    }
+    // for (1..m.rows) |r| {
+    //     res += m.at(r, m.cols - 1);
+    // }
+
+    // std.log.warn("cost: {d}", .{res});
+
+    return res;
+}
+
+test "eval basic" {
+    var data = [_]T{
+        1, 0, 0, 0,  1,  0,
+        0, 1, 0, 0,  1,  6,
+        0, 0, 1, 0, -1, -1,
+        0, 0, 0, 1,  0,  5,
+        0, 0, 0, 0,  0,  0,
+        0, 0, 0, 0,  0,  0,
+        0, 0, 0, 0,  0,  0
+    };
+    const m = Matrix.initBuffer(&data, 6);
+    // const cost = eval_cost(&m, ([_]usize{3})[0..1], ([_]T{1})[0..1]);
+    try std.testing.expectEqual(
+        eval_cost(&m, ([_]usize{3})[0..1], ([_]T{1})[0..1]),
+        11
+    );
+    try std.testing.expectEqual(
+        eval_cost(&m, ([_]usize{3})[0..1], ([_]T{2})[0..1]),
+        12
+    );
+    try std.testing.expectEqual(
+        eval_cost(&m, ([_]usize{3})[0..1], ([_]T{3})[0..1]),
+        13
+    );
+}
+
+// const NTuplesIterator = struct {
+//     n: usize,
+//     cur: []T,
+//     sum: T,
+//     child: ?NTuplesIterator,
+//     i: usize = 0,
+//
+//     fn init(allocator: Allocator, state: []T) @This() {
+//
+//         return .{
+//             .n = state.len,
+//             .cur = state,
+//             .sum = 0,
+//             .child = if (state.len > 2) @This().init(state[1..]) else null,
+//         };
+//     }
+//
+//     fn next(self: *@This()) []T {
+//         if (self.cur[self.i] == self.max) {
+//             if (self.i == self.n - 1) {
+//                 self.max += 1;
+//             } else {
+//                 self.cur[self.i] = 0;
+//             }
+//         } else {
+//             self.cur[self.i] += 1;
+//         }
+//
+//         if (self.i == self.n - 1) {
+//             self.i = 0;
+//         } else {
+//             self.i += 1;
+//         }
+//         return self.cur;
+//     }
+//
+//     fn step(self: *@This()) void {
+//         self.cur[0] = self.i;
+//         self.cur[1] = self.sum - self.i;
+//     }
+// };
+
+fn solve(x: *List(T), m: Matrix) void {
+    x.clearRetainingCapacity();
+    for (1..m.rows) |r| {
+        x.appendAssumeCapacity(m.at(r, m.cols - 1));
+    }
+}
+
+fn allInteger(x: []T) bool {
+    for (x) |val| {
+        if (@abs(@mod(val, 1)) > EPS and 1 - @abs(@mod(val, 1)) > EPS) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+fn allNonNeg(x: []T) bool {
+    for (x) |val| {
+        if (val + EPS < 0.0) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+const EPS = 0.000000001;
+
+fn close(x: T, y: T) bool {
+    return @abs(x - y) < EPS;
+}
+
+fn isBasicCol(m: Matrix, r: usize, c: usize) bool {
+    if (!close(m.at(r, c), 1.0)) {
+        return false;
+    }
+    for (0..m.rows) |rr| {
+        if (r != rr and !close(m.at(rr, c), 0.0)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// fn combinations(m: usize, n: usize)
+fn simplexStep(m: *Matrix) bool {
+    // Find entering and departing variables (col and row, resp.)
+    const entering = std.mem.findMin(T, m.row(0)[1 .. m.cols - 1]) + 1;
+    // std.log.debug("e: {d}", .{entering});
+    var lowest_val = std.math.floatMax(T);
+    var departing: ?usize = null;
+    for (1..m.rows) |i| {
+        const target = m.at(i, m.cols - 1);
+        const divisor = m.at(i, entering);
+        if (divisor > EPS) {
+            const val = target / divisor;
+            if (val < lowest_val) {
+                lowest_val = val;
+                departing = i;
+            }
+        }
+    }
+    if (departing == null or isBasicCol(m.*, departing.?, entering)) {
+        // std.log.debug("finished", .{});
+        return false;
+    }
+    // std.log.debug("e: {d} d: {d}", .{entering, departing.?});
+    m.eliminate(departing.?, entering);
+    return true;
+}
+
 const Problem = struct {
     p1target: u16,
     p1buttons: []u16,
@@ -276,13 +631,14 @@ pub fn main() !void {
     var p1: usize = 0;
     var p2: usize = 0;
 
-    for (0..aoc.build_options.repeats) |repeat| {
+    for (0..1) |repeat| {
         var lines = try reader.iterLines();
         while (lines.next()) |line| {
             const problem = try parse(allocator, line);
-            std.log.debug("{any}", .{problem});
+            // std.log.debug("{any}", .{problem});
             p1 += try p1search(allocator, problem.p1target, problem.p1buttons);
-            p2 += try p2search(allocator, problem.p2target, problem.p1buttons);
+            // p2 += try p2search(allocator, problem.p2target, problem.p1buttons);
+            p2 += @intFromFloat(std.math.round(try simplexMatrix(allocator, problem)));
         }
         p1 += 0;
         p2 += 0;
