@@ -70,11 +70,13 @@ fn simplexMatrix(allocator: Allocator, prob: Problem) !T {
         // Simplex found an integer solution and we can return it
         // std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
         return -matrix.at(0, matrix.cols - 1);
+    } else {
+        // std.log.debug("brute force {f}", .{matrix});
     }
     return bruteForce(matrix_copy, rank);
 }
 
-const SEARCH_MAX: usize = 140;
+const SEARCH_MAX: usize = 180;
 
 fn bruteForce(m: Matrix, rank: usize) T {
     var free_vars = [_]usize{0, 0, 0};
@@ -96,9 +98,6 @@ fn bruteForce(m: Matrix, rank: usize) T {
             free_i += 1;
             if (free_i >= num_free) break;
         }
-        // if (free_pos + 1 >= m.rows) {
-        //     break;
-        // }
     }
 
     // std.log.debug("brute forcing: {d}, {any}", .{num_free, free_vars});
@@ -161,16 +160,6 @@ fn eval_cost(m: *const Matrix, free_vars: []const usize, free_vals: []const T) T
     var x_ = [_]T{0} ** 50;
     var x = x_[0..m.cols - 2];
 
-    // var i: usize = 0;
-    // for (0..m.cols - 2) |c| {
-    //     if (c == free_vars[i]) {
-    //         x[c] = free_vals[i];
-    //         i += 1;
-    //         if (i >= free_vars.len) {
-    //             break;
-    //         }
-    //     }
-    // }
     for (free_vars, free_vals) |i, v| {
         x[i] = v;
     }
@@ -214,9 +203,6 @@ fn eval_cost(m: *const Matrix, free_vars: []const usize, free_vals: []const T) T
     for (free_vals) |v| {
         res += v;
     }
-    // for (1..m.rows) |r| {
-    //     res += m.at(r, m.cols - 1);
-    // }
 
     // std.log.warn("cost: {d}", .{res});
 
@@ -494,137 +480,9 @@ fn p1search(allocator: Allocator, target: u16, buttons: []const u16) !usize {
     return 0;
 }
 
-const P2State = struct {
-    presses: usize,
-    state: []const u16,
-
-    pub fn compareFn(_: void, a: @This(), b: @This()) std.math.Order {
-        if (a.presses < b.presses) return .lt;
-        if (a.presses > b.presses) return .gt;
-        if (std.mem.lessThan(u16, a.state, b.state)) return .gt;
-        if (std.mem.lessThan(u16, b.state, a.state)) return .lt;
-        return .eq;
-    }
-
-    pub fn add(out: *@This(), a: @This(), b: @This()) void {
-        out.presses = a.presses + b.presses;
-        for (a.state, 0..) |as, i| {
-            out.state[i] = as + b.state[i];
-        }
-    }
-};
-
-const SliceHasher = struct {
-    pub fn hash(_: SliceHasher, key: []const u16) u64 {
-        var hasher = std.hash.Wyhash.init(0);
-        std.hash.autoHashStrat(&hasher, key, .Deep);
-        return hasher.final();
-    }
-
-    pub fn eql(_: SliceHasher, a: []const u16, b: []const u16) bool {
-        return std.mem.eql(u16, a, b);
-    }
-    // pub const hash = std.hash.autoHashStrat(P2State, @This(), .Deep);
-    // pub const hash = std.hash.autoHashStrat(std.hash.Wyhash, @This(), .Deep);
-};
-
-fn p2search(allocator: Allocator, target: []u16, buttons: []const u16) !usize {
-    const len = target.len;
-    var start = try allocator.alloc(u16, len);
-    defer allocator.free(start);
-
-    for (0..len) |i| {
-        start[i] = 0;
-    }
-    var queue = Queue(P2State, void, P2State.compareFn).init(allocator, {});
-    defer queue.deinit();
-    try queue.add(.{ .presses = 0, .state = start });
-
-    var kill = std.HashMap([]const u16, void, SliceHasher, 80).init(allocator);
-    defer kill.deinit();
-    var best = std.HashMap([]const u16, usize, SliceHasher, 80).init(allocator);
-    defer best.deinit();
-    try best.put(start, 0);
-    // GRIPE: can't automatically hash slices
-    // UNGRIPE: the error message is clear
-    // GRIPE: meaning of "max_load_percentage" is totally unclear. Does 80 = 80%? Why then is it a u64?
-    // var seen = std.HashMap(
-    //     []const u16, void, SliceHasher, 80
-    // ).init(allocator);
-
-    while (queue.removeOrNull()) |current| {
-        std.log.debug("{any}", .{current});
-        // GRIPE no == for slices
-        if (std.mem.eql(u16, current.state, target)) {
-            return current.presses;
-        }
-        // if (seen.contains(current.state)) {
-        //     continue;
-        // }
-        // try seen.put(current.state, {});
-
-        // var added_moves = try List([]const u16).initCapacity(allocator, buttons.len);
-        // defer added_moves.deinit(allocator);
-
-        outer: for (buttons, 0..) |button, btn_i| {
-            _ = btn_i;
-            var next_state = try allocator.alloc(u16, len);
-            std.mem.copyForwards(u16, next_state, current.state);
-            for (0..len) |i| {
-                const one: u16 = 1;
-                if (button & (one << @intCast(len - i - 1)) > 0) {
-                    next_state[i] += 1;
-                    if (next_state[i] > target[i]) {
-                        allocator.free(next_state);
-                        continue :outer;
-                    }
-                }
-            }
-            // std.log.debug("move: {any}", .{next_state});
-            // if (btn_i > 0) {
-            //     // see whether there's any point pressing this button
-            //     var could_be_better = false;
-            //     kill: for (added_moves.items) |competing_state| {
-            //         // if competing state >= next_state, skip
-            //         for (0..len) |i| {
-            //             if (next_state[i] > competing_state[i]) {
-            //                 could_be_better = true;
-            //                 // std.log.debug("better than: {any}", .{competing_state});
-            //                 break :kill;
-            //             }
-            //         }
-            //         // std.log.debug("worse than: {any}", .{competing_state});
-            //     }
-            //     if (!could_be_better) continue;
-            // }
-            // added_moves.appendAssumeCapacity(next_state);
-
-            const next_presses = current.presses + 1;
-            const next = P2State{ .presses = next_presses, .state = next_state };
-            // for (buttons, 0..) |other_button, btn_j| {
-            //     if (btn_i == btn_j) continue;
-            //
-            // }
-            if (best.get(next_state)) |old_presses| {
-                if (old_presses > next_presses) {
-                    const old = P2State{ .presses = old_presses, .state = next_state };
-                    try best.put(next_state, next_presses);
-                    queue.update(old, next) catch {
-                        try queue.add(next);
-                    };
-                }
-            } else {
-                try best.put(next_state, next_presses);
-                try queue.add(next);
-            }
-        }
-        // allocator.free(current.state);
-    }
-
-    std.log.warn("failed", .{});
-    return 0;
-}
-
+// GRIPE: can't automatically hash slices
+// UNGRIPE: the error message is clear
+// GRIPE: meaning of "max_load_percentage" is totally unclear. Does 80 = 80%? Why then is it a u64?
 pub fn main() !void {
     const allocator = try aoc.allocator();
 
