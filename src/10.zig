@@ -68,11 +68,13 @@ fn simplexMatrix(allocator: Allocator, prob: Problem) !T {
     solve(&x, matrix);
     if (allInteger(x.items)) {
         // Simplex found an integer solution and we can return it
-        // std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
+        std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
         return -matrix.at(0, matrix.cols - 1);
     }
     return bruteForce(matrix_copy, rank);
 }
+
+const SEARCH_MAX: usize = 140;
 
 fn bruteForce(m: Matrix, rank: usize) T {
     var free_vars = [_]usize{0, 0, 0};
@@ -102,7 +104,7 @@ fn bruteForce(m: Matrix, rank: usize) T {
     // std.log.debug("brute forcing: {d}, {any}", .{num_free, free_vars});
 
     if (num_free == 1) {
-        for (0..50) |x_| {
+        for (0..SEARCH_MAX) |x_| {
             const x: isize = @as(isize, @intCast(x_)) - 0;
             free_vals[0] = @floatFromInt(x);
             const cost = eval_cost(&m, free_vars[0..1], free_vals[0..1]);
@@ -113,8 +115,8 @@ fn bruteForce(m: Matrix, rank: usize) T {
             // std.log.debug("cost: {d} best: {d}", .{cost, best});
         }
     } else if (num_free == 2) {
-        for (0..50) |x_| {
-            for (0..50) |y_| {
+        for (0..SEARCH_MAX) |x_| {
+            for (0..SEARCH_MAX) |y_| {
                 const x: isize = @as(isize, @intCast(x_)) - 0;
                 const y: isize = @as(isize, @intCast(y_)) - 0;
                 free_vals[0] = @floatFromInt(x);
@@ -128,9 +130,9 @@ fn bruteForce(m: Matrix, rank: usize) T {
             }
         }
     } else if (num_free == 3) {
-        for (0..50) |x_| {
-            for (0..50) |y_| {
-                for (0..50) |z_| {
+        for (0..SEARCH_MAX) |x_| {
+            for (0..SEARCH_MAX) |y_| {
+                for (0..SEARCH_MAX) |z_| {
                     const x: isize = @as(isize, @intCast(x_)) - 0;
                     const y: isize = @as(isize, @intCast(y_)) - 0;
                     const z: isize = @as(isize, @intCast(z_)) - 0;
@@ -149,7 +151,7 @@ fn bruteForce(m: Matrix, rank: usize) T {
     }
 
     // std.log.debug("rank {d} free {d}", .{rank, num_free});
-    // std.log.warn("best: {d}", .{best});
+    std.log.warn("best: {d}", .{best});
 
     return best;
 }
