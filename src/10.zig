@@ -68,7 +68,7 @@ fn simplexMatrix(allocator: Allocator, prob: Problem) !T {
     solve(&x, matrix);
     if (allInteger(x.items)) {
         // Simplex found an integer solution and we can return it
-        std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
+        // std.log.warn("exact {d}", .{-matrix.at(0, matrix.cols - 1)}) ;
         return -matrix.at(0, matrix.cols - 1);
     }
     return bruteForce(matrix_copy, rank);
@@ -151,7 +151,7 @@ fn bruteForce(m: Matrix, rank: usize) T {
     }
 
     // std.log.debug("rank {d} free {d}", .{rank, num_free});
-    std.log.warn("best: {d}", .{best});
+    // std.log.warn("best: {d}", .{best});
 
     return best;
 }
